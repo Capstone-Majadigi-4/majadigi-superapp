@@ -1,148 +1,97 @@
-# 📦 Majadigi Super App - Project Structure & Workflow
+# Majadigi Super App - Core Monorepo
 
-Dokumen ini menjelaskan struktur repository, fungsi setiap folder, serta aturan kerja tim dalam pengembangan proyek Majadigi Super App.
+Repositori ini merupakan pusat pengembangan ekosistem layanan publik Majadigi. Proyek ini menggunakan arsitektur Microservices yang dikelola dalam satu repositori (Monorepo) untuk optimalisasi alur kerja pengembangan dan integrasi sistem.
 
 ---
 
-# 1. Struktur Repository
-```
+## Struktur Direktori
+
+```text
 majadigi-superapp/
-
-services/
-    gateway-service/
-    auth-service/
-    transport-service/
-    health-service/
-    economy-service/
-
-mobile/
-    majadigi-app/
-        lib/
-        pubspec.yaml
-
-infrastructure/
-    docker-compose.yml
-    nginx/
-        nginx.conf
-
-docs/
-
-.env.example
-.gitignore
-README.md
+├── .husky/             # Git Hooks untuk validasi pesan commit
+├── mobile/             # Flutter Mobile App
+├── gateway/            # API Gateway dan Aggregator (NestJS)
+├── services/
+│   ├── core/           # Layanan inti 
+│   └── dummy/          # 10 Layanan OPD berbasis NestJS
+├── infra/              # Konfigurasi Docker, Redis, dan PostgreSQL
+└── package.json        # Dependensi root dan konfigurasi scripts
 ```
 
+## Spesifikasi Teknologi
+
+- **Frontend:** Flutter (Dart)
+- **Backend:** NestJS (TypeScript)
+- **Database:** PostgreSQL (Konfigurasi Multi-schema)
+- **Caching:** Redis (Penerapan Cache-Aside Pattern)
+- **DevOps:** Docker, Husky, Commitlint
+
+## Panduan Instalasi Lokal
+
+### 1. Kloning Repositori
+Gunakan perintah berikut untuk mengunduh proyek ke direktori lokal Anda:
+```bash
+git clone [https://github.com/Capstone-Majadigi-4/majadigi-superapp.git](https://github.com/Capstone-Majadigi-4/majadigi-superapp.git)
+cd majadigi-superapp
+```
+
+### 2. Konfigurasi Lingkungan Pengembangan (Development Tools)
+Instalasi Husky dan library pendukung untuk memastikan standar kode terjaga:
+```bash
+npm install
+```
+
+### 3. Menjalankan Layanan (Docker)
+Pastikan Docker Engine telah berjalan di perangkat Anda, kemudian eksekusi perintah berikut:
+```bash
+docker-compose up -d
+```
 
 ---
 
-# 2. Penjelasan Folder
+## Protokol Kontribusi
 
-## 🔹 services/
+### 1. Strategi Pencabangan (Git Branching)
+Setiap pengembang wajib mengikuti struktur branch berikut:
+- **main**: Branch production (hanya untuk rilis stabil dan presentasi).
+- **dev**: Branch integrasi utama (penggabungan seluruh fitur baru) -> nanti kerjainnya semua buat ambil branchnya dari sini ya baru PR ke main.
+- **feature/[nama-fitur]**: Digunakan untuk pengembangan fitur baru.
+- **fix/[nama-bug]**: Digunakan untuk perbaikan kesalahan (bug).
 
-Folder ini berisi seluruh backend microservices.
+### 2. Standar Pesan Commit (Conventional Commits)
+Sistem menggunakan Husky dan Commitlint untuk memvalidasi setiap pesan commit. Format yang diwajibkan adalah: `<type>: <description>`
 
-Contoh:
-```
-services/
-gateway-service/
-auth-service/
-transport-service/
-health-service/
-economy-service/
-```
+Tipe yang diizinkan:
+- **feat**: Penambahan fitur baru.
+- **fix**: Perbaikan bug.
+- **docs**: Pembaruan dokumentasi.
+- **chore**: Pembaruan konfigurasi, dependensi, atau build tools.
+- **refactor**: Perbaikan struktur kode tanpa mengubah fungsionalitas.
 
+*Contoh: `feat: implement redis caching for bapenda service`*
 
-### Fungsi:
-- Menyimpan kode backend (NestJS)
-- Setiap service berdiri sendiri (independent)
-- Setiap service memiliki:
-  - `Dockerfile`
-  - `package.json`
-  - source code (`src/`)
-
-### Catatan:
-- 1 service = 1 container
-- Tidak boleh saling akses database langsung
-- Komunikasi antar service melalui API
+### 3. Alur Pull Request (PR)
+- Pengembangan fitur dilakukan pada branch masing-masing.
+- Pengajuan penggabungan kode dilakukan melalui Pull Request ke branch **dev**.
+- PR wajib mendapatkan persetujuan (Approval) dari minimal satu anggota tim sebelum digabungkan.
 
 ---
 
-## 🔹 mobile/
+## Daftar Layanan Terintegrasi
 
-Folder ini berisi aplikasi Flutter.
-
-Contoh:
-```
-mobile/
-majadigi-app/
-lib/
-pubspec.yaml
-```
-
-
-### Fungsi:
-- Menyimpan seluruh kode frontend mobile
-- Mengakses backend melalui API Gateway
-
-### Catatan:
-- Tidak boleh mengakses service secara langsung
-- Semua request harus melalui gateway
+| Layanan | Teknologi |
+| :--- | :--- |
+| **Nomer Darurat** | NestJS |
+| **Bapenda** | NestJS |
+| **Sinaker** | NestJS |
+| **Skrining E-TIBI** | NestJS |
+| **Wisata Jatim** | NestJS |
+| **Info Bansos** | NestJS |
+| **Transjatim** | NestJS |
+| **Harga Bahan Pokok** | NestJS |
+| **Islamic Center** | NestJS |
+| **RSUD Saiful Anwar** | NestJS |
 
 ---
 
-## 🔹 infrastructure/
-
-Folder ini dikelola oleh DevOps.
-
-Contoh:
-```
-infrastructure/
-docker-compose.yml
-nginx/
-nginx.conf
-```
-
-
-### Fungsi:
-- Mengatur integrasi seluruh service
-- Menjalankan container menggunakan Docker
-- Mengatur routing melalui Nginx
-
-### Isi utama:
-- `docker-compose.yml` → menjalankan semua service
-- `nginx.conf` → reverse proxy
-
----
-
-## 🔹 docs/
-
-Dokumentasi proyek.
-
-### Fungsi:
-- Menyimpan dokumentasi teknis
-- Menyimpan arsitektur sistem
-- Menyimpan panduan penggunaan
-
----
-
-## 🔹 Root Files
-
-### `.env.example`
-Template environment variable.
-
-Contoh:
-```
-DB_HOST=
-DB_USER=
-DB_PASSWORD=
-JWT_SECRET=
-```
-
-
-### `.gitignore`
-File yang tidak boleh di-commit.
-
-### `README.md`
-Panduan singkat menjalankan project.
-
----
+**Kelompok 4 Capstone Project - C.1**
