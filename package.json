@@ -1,0 +1,30 @@
+{
+  "name": "majadigi-superapp",
+  "version": "1.0.0",
+  "description": "mono-repositori untuk majadigi-superapp, mencakup infrastruktur, service, dan mobile.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Capstone-Majadigi-4/majadigi-superapp.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Capstone-Majadigi-4/majadigi-superapp/issues"
+  },
+  "homepage": "https://github.com/Capstone-Majadigi-4/majadigi-superapp#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
+    "husky": "^9.1.7"
+  }
+}
