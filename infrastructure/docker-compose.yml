@@ -1,2 +1,38 @@
-version: "3"
+version: '3.8'
+
 services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: majadigi-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: majadigi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # mount file init.sql agar skema otomatis terbuat saat pertama kali jalan
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - majadigi-network
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: majadigi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - majadigi-network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  majadigi-network:
+    driver: bridge

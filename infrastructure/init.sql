@@ -1,0 +1,5 @@
+CREATE SCHEMA bapenda;
+CREATE SCHEMA bansos;
+CREATE SCHEMA rsud;
+CREATE SCHEMA sinaker;
+CREATE SCHEMA darurat;
