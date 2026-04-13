@@ -14,7 +14,12 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       # mount file init.sql agar skema otomatis terbuat saat pertama kali jalan
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d majadigi_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - majadigi-network
 
