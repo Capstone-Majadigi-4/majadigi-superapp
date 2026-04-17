@@ -36,6 +36,6 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=GANTI_DENGAN_PROJECT_KEY_BOS
+            -Dsonar.projectKey=Capstone-Majadigi-4_majadigi-superapp
             -Dsonar.sources=.
             -Dsonar.exclusions=node_modules/**,coverage/**
