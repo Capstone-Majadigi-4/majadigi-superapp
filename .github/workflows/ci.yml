@@ -31,11 +31,12 @@ jobs:
       #   run: npm test
         
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v4
+        uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
+            -Dsonar.organization=capstone-majadigi-4
             -Dsonar.projectKey=Capstone-Majadigi-4_majadigi-superapp
             -Dsonar.sources=.
             -Dsonar.exclusions=node_modules/**,coverage/**
