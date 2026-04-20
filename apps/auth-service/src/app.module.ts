@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
+import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -26,6 +27,7 @@ import { UsersModule } from './users/users.module';
       }),
     }),
     UsersModule,
+    RefreshTokensModule,
   ],
 })
 export class AppModule {}
