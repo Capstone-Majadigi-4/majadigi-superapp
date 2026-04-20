@@ -5,16 +5,17 @@ services:
     image: postgres:15-alpine
     container_name: majadigi-postgres
     restart: always
+    env_file:
+      - ../.env
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # mount file init.sql agar skema otomatis terbuat saat pertama kali jalan
-      #- ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
@@ -23,6 +24,18 @@ services:
     networks:
       - majadigi-network
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: majadigi-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@majadigi.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    networks:
+      - majadigi-network
+      
   redis-cache:
     image: redis:7-alpine
     container_name: majadigi-redis
