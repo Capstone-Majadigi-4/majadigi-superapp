@@ -7,46 +7,36 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Poli } from '../../poli/entities/poli.entity';
-
-export enum StatusAntrean {
-  MENUNGGU = 'menunggu',
-  DIPANGGIL = 'dipanggil',
-  SELESAI = 'selesai',
-  BATAL = 'batal',
-}
+import { Dokter } from './dokter.entity';
 
 @Entity({ schema: 'rsud', name: 'antrean' })
 export class Antrean {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
   @Column({ type: 'varchar', length: 16 })
   user_nik!: string;
 
-  @Column()
-  poli_id!: number;
+  @Column('uuid')
+  poli_id!: string;
 
-  @Column()
-  dokter_id!: number;
+  @Column('uuid')
+  dokter_id!: string;
 
   @Column({ type: 'date' })
   tanggal!: string;
 
-  @Column()
-  nomor_antrean!: number;
+  @Column({ type: 'varchar', length: 10 })
+  nomor_antrean!: string;
 
-  @Column({ type: 'time' })
+  @Column({ type: 'time', nullable: true })
   estimasi_jam!: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   qr_checkin!: string;
 
-  @Column({
-    type: 'enum',
-    enum: StatusAntrean,
-    default: StatusAntrean.MENUNGGU,
-  })
-  status!: StatusAntrean;
+  @Column({ type: 'varchar', length: 20, default: 'menunggu' })
+  status!: string;
 
   @Column({ type: 'timestamp', nullable: true })
   dipanggil_at!: Date;
@@ -57,4 +47,8 @@ export class Antrean {
   @ManyToOne(() => Poli)
   @JoinColumn({ name: 'poli_id' })
   poli!: Poli;
+
+  @ManyToOne(() => Dokter)
+  @JoinColumn({ name: 'dokter_id' })
+  dokter!: Dokter;
 }
