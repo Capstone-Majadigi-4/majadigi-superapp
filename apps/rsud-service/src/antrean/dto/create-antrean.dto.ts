@@ -1,12 +1,12 @@
-import { IsDateString, IsNumber } from 'class-validator';
+import { IsUUID, IsDateString } from 'class-validator';
 
 export class CreateAntreanDto {
-    @IsNumber()
-    poli_id!: number;
+  @IsUUID()
+  poli_id!: string;
 
-    @IsNumber()
-    dokter_id!: number;
+  @IsUUID()
+  dokter_id!: string;
 
-    @IsDateString()
-    tanggal!: string;
+  @IsDateString()
+  tanggal!: string;
 }
