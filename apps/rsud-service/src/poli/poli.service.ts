@@ -1,24 +1,25 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Poli } from './entities/poli.entity';
-import { Repository } from 'typeorm/repository/Repository.js';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Poli } from './entities/poli.entity';
 
 @Injectable()
 export class PoliService {
-    constructor(
-        @InjectRepository(Poli) private poliRepository: Repository<Poli>,
-    ) {}
+  constructor(@InjectRepository(Poli) private readonly poliRepo: Repository<Poli>) {}
 
-    findAll() {
-        return this.poliRepository.find({ where: { is_active: true } });
-    }
+  findAll() {
+    return this.poliRepo.find({
+      where: { is_active: true },
+      relations: ['jadwal', 'jadwal.dokter'],
+    });
+  }
 
-    async findOne(id: number) {
-        const poli = await this.poliRepository.findOne({where: {id, is_active: true}});
-        if(!poli) throw new NotFoundException('Poli tidak ditemukan')
-        
-        return poli
-    }
-
-
+  async findOne(id: string) {
+    const poli = await this.poliRepo.findOne({
+      where: { id, is_active: true },
+      relations: ['jadwal', 'jadwal.dokter'],
+    });
+    if (!poli) throw new NotFoundException('Poli tidak ditemukan');
+    return poli;
+  }
 }
