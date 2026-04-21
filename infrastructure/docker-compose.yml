@@ -35,6 +35,20 @@ services:
       - "8080:80"
     networks:
       - majadigi-network
+    
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: majadigi-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    # Nunggu gateway dari BE
+    # depends_on:
+    #   - gateway
+    networks:
+      - majadigi-network
       
   redis-cache:
     image: redis:7-alpine
