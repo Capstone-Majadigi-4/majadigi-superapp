@@ -19,7 +19,7 @@ export class AuthMiddleware implements NestMiddleware {
     constructor(
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
-    ) {}
+    ) {} 
 
     use(req: Request, res: Response, next: NextFunction) {
         const requestId = randomUUID();
