@@ -1,4 +1,4 @@
-import { IsUUID, IsDateString } from 'class-validator';
+import { IsUUID, IsDateString, IsOptional, IsString } from 'class-validator';
 
 export class CreateAntreanDto {
   @IsUUID()
@@ -9,4 +9,8 @@ export class CreateAntreanDto {
 
   @IsDateString()
   tanggal!: string;
+
+  @IsOptional()
+  @IsString()
+  fcm_token?: string;
 }
