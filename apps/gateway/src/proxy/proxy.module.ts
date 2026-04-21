@@ -29,7 +29,7 @@ export class ProxyModule implements NestModule {
     // 1. AuthMiddleware jalan duluan di semua route
     consumer
       .apply(AuthMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+      .forRoutes({ path: '*path', method: RequestMethod.ALL });
 
     // 2. Proxy ke masing-masing service
     const routes = getRoutes(process.env);
@@ -57,7 +57,10 @@ export class ProxyModule implements NestModule {
             },
           }),
         )
-        .forRoutes({ path: `${route.path}*`, method: RequestMethod.ALL });
+        .forRoutes(
+          { path: route.path, method: RequestMethod.ALL },
+          { path: `${route.path}/*path`, method: RequestMethod.ALL },
+        );
     });
   }
 }
