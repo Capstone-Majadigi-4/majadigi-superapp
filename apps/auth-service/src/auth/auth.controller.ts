@@ -2,9 +2,9 @@ import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Post, UseGuards }
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { JwtPayload } from './strategies/jwt.strategy';
-import { Buffer } from 'buffer';
+import { Buffer } from 'node:buffer';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {

@@ -1,4 +1,3 @@
-import { RefreshTokenEntity } from 'src/refresh-tokens/entities/refresh-token.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,6 +6,7 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { RefreshTokenEntity } from '../../refresh-tokens/entities/refresh-token.entity';
 
 @Entity({ schema: 'auth', name: 'users' })
 export class UserEntity {
