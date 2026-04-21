@@ -27,7 +27,7 @@ export class AntreanService {
     await queryRunner.startTransaction();
 
     try {
-      // Advisory lock per poli+tanggal — cegah race condition nomor antrean
+      // Advisory lock per poli+tanggal cegah race condition nomor antrean
       await queryRunner.query(`SELECT pg_advisory_xact_lock(hashtext($1))`, [
         `antrean_${dto.poli_id}_${dto.tanggal}`,
       ]);
@@ -58,11 +58,13 @@ export class AntreanService {
       const saved = await queryRunner.manager.save(Antrean, antrean);
       await queryRunner.commitTransaction();
 
-      // Load relations for response
-      return this.antreanRepo.findOne({
+      const result = await this.antreanRepo.findOne({
         where: { id: saved.id },
         relations: ['poli', 'dokter'],
       });
+
+      this.antreanGateway.broadcastAntreanBaru(dto.poli_id, result!);
+      return result;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
