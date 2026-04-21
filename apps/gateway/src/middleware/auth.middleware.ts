@@ -3,8 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from "node:crypto";
-import { FORCE_AUTH_PATHS } from "src/proxy/routes.config";
-
+import { FORCE_AUTH_PATHS } from "../proxy/routes.config";
 
 export interface JwtPayload {
     sub: string;
