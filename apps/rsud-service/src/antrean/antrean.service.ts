@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Antrean } from './entities/antrean.entity';
 import { Dokter } from './entities/dokter.entity';
 import { CreateAntreanDto } from './dto/create-antrean.dto';
 import { AntreanGateway } from './antrean.gateway';
+
+const antreanStatusKey = (id: string) => `rsud:antrean:status:${id}`;
+const ANTREAN_TTL_MS = 10 * 1000;
 
 @Injectable()
 export class AntreanService {
@@ -14,6 +19,7 @@ export class AntreanService {
     @InjectRepository(Dokter) private readonly dokterRepo: Repository<Dokter>,
     private readonly dataSource: DataSource,
     private readonly antreanGateway: AntreanGateway,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   async createAntrean(dto: CreateAntreanDto, userNik: string) {
@@ -73,12 +79,18 @@ export class AntreanService {
     }
   }
 
-  async getStatus(id: string) {
+  async getStatus(id: string): Promise<Antrean> {
+    const key = antreanStatusKey(id);
+    const cached = await this.cache.get<Antrean>(key);
+    if (cached) return cached;
+
     const antrean = await this.antreanRepo.findOne({
       where: { id },
       relations: ['poli', 'dokter'],
     });
     if (!antrean) throw new NotFoundException('Antrean tidak ditemukan');
+
+    await this.cache.set(key, antrean, ANTREAN_TTL_MS);
     return antrean;
   }
 
@@ -114,6 +126,7 @@ export class AntreanService {
         relations: ['poli', 'dokter'],
       });
 
+      await this.cache.del(antreanStatusKey(antrean.id));
       this.antreanGateway.broadcastDipanggil(poliId, updated!);
       return updated;
     } catch (err) {

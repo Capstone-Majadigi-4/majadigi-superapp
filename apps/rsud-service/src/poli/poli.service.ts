@@ -1,29 +1,39 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { Poli } from './entities/poli.entity';
 import { JadwalDokter } from '../antrean/entities/jadwal-dokter.entity';
+
+const POLI_CACHE_KEY = 'rsud:poli:all';
+const POLI_TTL_MS = 5 * 60 * 1000;
 
 @Injectable()
 export class PoliService {
   constructor(
     @InjectRepository(Poli) private readonly poliRepo: Repository<Poli>,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
-  findAll() {
-    return this.poliRepo
-      .find({
-        where: { is_active: true },
-        relations: ['jadwal', 'jadwal.dokter'],
-      })
-      .then((polis) =>
-        polis.map((poli) => ({
-          id: poli.id,
-          nama: poli.nama,
-          lantai: poli.lantai,
-          dokter: this.groupDokter(poli.jadwal),
-        })),
-      );
+  async findAll() {
+    const cached = await this.cache.get(POLI_CACHE_KEY);
+    if (cached) return cached;
+
+    const polis = await this.poliRepo.find({
+      where: { is_active: true },
+      relations: ['jadwal', 'jadwal.dokter'],
+    });
+
+    const result = polis.map((poli) => ({
+      id: poli.id,
+      nama: poli.nama,
+      lantai: poli.lantai,
+      dokter: this.groupDokter(poli.jadwal),
+    }));
+
+    await this.cache.set(POLI_CACHE_KEY, result, POLI_TTL_MS);
+    return result;
   }
 
   private groupDokter(jadwal: JadwalDokter[]) {

@@ -51,7 +51,10 @@ export class AntreanController {
       estimasi_jam: data.estimasi_jam,
       status: data.status,
       dipanggil_at: data.dipanggil_at,
-    });
+    },
+    'Status antrean berhasil diambil',
+    200,
+  );
   }
 
   @Post('webhook/panggilberikutnya')
@@ -65,6 +68,7 @@ export class AntreanController {
         dipanggil_at: data.dipanggil_at,
       },
       'Antrean dipanggil',
+      200,
     );
   }
 }
