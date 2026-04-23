@@ -214,6 +214,15 @@ CREATE TABLE "rsud"."antrean" (
   "created_at" timestamp DEFAULT (now())
 );
 
+CREATE TABLE "rsud"."ruangan" (
+  "id"        uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "nama"      varchar(150) NOT NULL,
+  "kelas"     varchar(50)  NOT NULL,
+  "kapasitas" int          NOT NULL DEFAULT 0,
+  "terisi"    int          NOT NULL DEFAULT 0,
+  "is_active" boolean      NOT NULL DEFAULT true
+);
+
 CREATE TABLE "darurat"."instansi" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "nama" varchar(200) NOT NULL,
