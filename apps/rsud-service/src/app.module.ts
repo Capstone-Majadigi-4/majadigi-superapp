@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PoliModule } from './poli/poli.module';
 import { AntreanModule } from './antrean/antrean.module';
 import { NotificationModule } from './notification/notification.module';
+import { SeederModule } from './database/seeder.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { NotificationModule } from './notification/notification.module';
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
+    SeederModule,
     NotificationModule,
     PoliModule,
     AntreanModule,
