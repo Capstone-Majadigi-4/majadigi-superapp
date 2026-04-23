@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PoliModule } from './poli/poli.module';
 import { AntreanModule } from './antrean/antrean.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -18,12 +19,11 @@ import { AntreanModule } from './antrean/antrean.module';
         database: config.get<string>('DB_NAME'),
         schema: config.get<string>('DB_SCHEMA'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        migrations: [__dirname + '/migrations/*{.ts,.js}'],
-        migrationsRun: false,
         synchronize: false,
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
+    NotificationModule,
     PoliModule,
     AntreanModule,
   ],

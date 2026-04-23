@@ -208,6 +208,7 @@ CREATE TABLE "rsud"."antrean" (
   "nomor_antrean" varchar(10) NOT NULL,
   "estimasi_jam" time,
   "qr_checkin" text,
+  "fcm_token" text,
   "status" varchar(20) DEFAULT 'menunggu',
   "dipanggil_at" timestamp,
   "created_at" timestamp DEFAULT (now())

@@ -35,6 +35,9 @@ export class Antrean {
   @Column({ type: 'text', nullable: true })
   qr_checkin!: string;
 
+  @Column({ type: 'text', nullable: true })
+  fcm_token!: string;
+
   @Column({ type: 'varchar', length: 20, default: 'menunggu' })
   status!: string;
 
