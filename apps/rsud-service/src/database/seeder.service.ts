@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Poli } from '../poli/entities/poli.entity';
 import { Dokter } from '../antrean/entities/dokter.entity';
 import { JadwalDokter } from '../antrean/entities/jadwal-dokter.entity';
+import { Ruangan } from '../kamar/entities/ruangan.entity';
 
 @Injectable()
 export class SeederService implements OnApplicationBootstrap {
@@ -14,12 +15,15 @@ export class SeederService implements OnApplicationBootstrap {
     @InjectRepository(Dokter) private readonly dokterRepo: Repository<Dokter>,
     @InjectRepository(JadwalDokter)
     private readonly jadwalRepo: Repository<JadwalDokter>,
+    @InjectRepository(Ruangan)
+    private readonly ruanganRepo: Repository<Ruangan>,
   ) {}
 
   async onApplicationBootstrap() {
     await this.seedPoli();
     await this.seedDokter();
     await this.seedJadwal();
+    await this.seedRuangan();
   }
 
   private async seedPoli() {
@@ -90,5 +94,27 @@ export class SeederService implements OnApplicationBootstrap {
 
     await this.jadwalRepo.save(jadwal);
     this.logger.log('Seeded: jadwal_dokter');
+  }
+
+  private async seedRuangan() {
+    const count = await this.ruanganRepo.count();
+    if (count > 0) return;
+
+    await this.ruanganRepo.save([
+      { nama: 'R. PICU KRAKATAU', kelas: 'ICU', kapasitas: 20, terisi: 18 },
+      { nama: 'R. TOBA BAYI', kelas: 'Perinatologi', kapasitas: 30, terisi: 12 },
+      { nama: 'R. KRAKATAU', kelas: 'Kelas I', kapasitas: 50, terisi: 35 },
+      { nama: 'R. RINJANI', kelas: 'Kelas II', kapasitas: 60, terisi: 40 },
+      { nama: 'R. SEMERU', kelas: 'Kelas III', kapasitas: 80, terisi: 55 },
+      { nama: 'R. BROMO VIP', kelas: 'VIP', kapasitas: 20, terisi: 8 },
+      { nama: 'R. MERAPI VVIP', kelas: 'VVIP', kapasitas: 10, terisi: 3 },
+      { nama: 'R. ICU UTAMA', kelas: 'ICU', kapasitas: 15, terisi: 10 },
+      { nama: 'R. NICU', kelas: 'NICU', kapasitas: 12, terisi: 7 },
+      { nama: 'R. AGUNG', kelas: 'Kelas II', kapasitas: 70, terisi: 45 },
+      { nama: 'R. LAWU', kelas: 'Kelas III', kapasitas: 80, terisi: 60 },
+      { nama: 'R. SINABUNG', kelas: 'Kelas I', kapasitas: 40, terisi: 20 },
+    ]);
+
+    this.logger.log('Seeded: ruangan');
   }
 }
