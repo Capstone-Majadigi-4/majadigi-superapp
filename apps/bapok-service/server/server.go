@@ -75,7 +75,8 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	admin.Post("/komoditas", komoditasHandler.Create)
 	admin.Patch("/komoditas/:id", komoditasHandler.Update)
 	admin.Delete("/komoditas/:id", komoditasHandler.Delete)
-admin.Post("/harga", hargaHandler.Create)
+	admin.Post("/harga", hargaHandler.Create)
+	admin.Post("/harga/bulk-csv", hargaHandler.BulkCSV)
 
 	return &Server{app: app, cfg: cfg}
 }

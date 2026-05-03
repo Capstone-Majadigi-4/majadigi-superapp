@@ -89,6 +89,53 @@ func (s *Service) Create(ctx context.Context, req CreateHargaRequest) (*HargaHar
 	return result, nil
 }
 
+func (s *Service) BulkCSV(ctx context.Context, rows []BulkCSVRow, inputOleh string) (*BulkCSVResult, error) {
+	komoditasMap, err := s.repo.LoadKomoditasMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	pasarMap, err := s.repo.LoadPasarMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &BulkCSVResult{Total: len(rows)}
+
+	for i, row := range rows {
+		lineNum := i + 2 // baris 1 = header
+
+		komoditasID, ok := komoditasMap[row.NamaKomoditas]
+		if !ok {
+			result.Gagal++
+			result.Errors = append(result.Errors, fmt.Sprintf("baris %d: komoditas '%s' tidak ditemukan", lineNum, row.NamaKomoditas))
+			continue
+		}
+
+		pasarID, ok := pasarMap[row.NamaPasar]
+		if !ok {
+			result.Gagal++
+			result.Errors = append(result.Errors, fmt.Sprintf("baris %d: pasar '%s' tidak ditemukan", lineNum, row.NamaPasar))
+			continue
+		}
+
+		if err := s.repo.UpsertHarga(ctx, komoditasID, pasarID, row.Harga, row.Tanggal, inputOleh); err != nil {
+			result.Gagal++
+			result.Errors = append(result.Errors, fmt.Sprintf("baris %d: gagal simpan (%v)", lineNum, err))
+			continue
+		}
+
+		result.Sukses++
+
+		// invalidasi cache harga tanggal ini
+		pattern := fmt.Sprintf("bapok:harga:%s:*", row.Tanggal)
+		if keys, _ := s.rdb.Keys(ctx, pattern).Result(); len(keys) > 0 {
+			s.rdb.Del(ctx, keys...)
+		}
+	}
+
+	return result, nil
+}
+
 func (s *Service) checkAlerts(ctx context.Context, komoditasID string, hargaBaru int64) {
 	alerts, err := s.repo.FindAlertsToCheck(ctx, komoditasID)
 	if err != nil {

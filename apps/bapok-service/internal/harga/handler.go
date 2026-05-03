@@ -1,6 +1,10 @@
 package harga
 
 import (
+	"encoding/csv"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"bapok-service/internal/common"
@@ -37,6 +41,74 @@ func (h *Handler) FindHistori(c *fiber.Ctx) error {
 		return common.HandleError(c, err)
 	}
 	return common.Success(c, result, "OK", 200)
+}
+
+func (h *Handler) BulkCSV(c *fiber.Ctx) error {
+	file, err := c.FormFile("file")
+	if err != nil {
+		return common.Error(c, "File CSV tidak ditemukan", 400)
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		return common.Error(c, "Gagal membuka file", 400)
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+	records, err := reader.ReadAll()
+	if err != nil {
+		return common.Error(c, "Format CSV tidak valid", 400)
+	}
+
+	if len(records) < 2 {
+		return common.Error(c, "CSV kosong atau hanya berisi header", 400)
+	}
+
+	var rows []BulkCSVRow
+	var parseErrors []string
+
+	// skip header (index 0)
+	for i, rec := range records[1:] {
+		lineNum := i + 2
+		if len(rec) < 4 {
+			parseErrors = append(parseErrors, fmt.Sprintf("baris %d: kolom tidak lengkap", lineNum))
+			continue
+		}
+
+		harga, err := strconv.ParseInt(strings.TrimSpace(rec[2]), 10, 64)
+		if err != nil || harga <= 0 {
+			parseErrors = append(parseErrors, fmt.Sprintf("baris %d: harga tidak valid", lineNum))
+			continue
+		}
+
+		rows = append(rows, BulkCSVRow{
+			NamaKomoditas: strings.TrimSpace(rec[0]),
+			NamaPasar:     strings.TrimSpace(rec[1]),
+			Harga:         harga,
+			Tanggal:       strings.TrimSpace(rec[3]),
+		})
+	}
+
+	if len(parseErrors) > 0 && len(rows) == 0 {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Semua baris gagal diparse",
+			"errors":  parseErrors,
+			"code":    400,
+		})
+	}
+
+	inputOleh := c.Get("x-user-nik")
+	result, err := h.service.BulkCSV(c.Context(), rows, inputOleh)
+	if err != nil {
+		return common.HandleError(c, err)
+	}
+
+	result.Errors = append(parseErrors, result.Errors...)
+	result.Gagal += len(parseErrors)
+
+	return common.Success(c, result, "Bulk upload selesai", 200)
 }
 
 func (h *Handler) Create(c *fiber.Ctx) error {

@@ -91,6 +91,53 @@ func (r *Repository) Create(ctx context.Context, req CreateHargaRequest) (*Harga
 	return &h, nil
 }
 
+func (r *Repository) LoadKomoditasMap(ctx context.Context) (map[string]string, error) {
+	rows, err := r.db.Query(ctx, `SELECT nama, id FROM bapok.komoditas WHERE is_active = true`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]string)
+	for rows.Next() {
+		var nama, id string
+		if err := rows.Scan(&nama, &id); err != nil {
+			return nil, err
+		}
+		m[nama] = id
+	}
+	return m, nil
+}
+
+func (r *Repository) LoadPasarMap(ctx context.Context) (map[string]string, error) {
+	rows, err := r.db.Query(ctx, `SELECT nama, id FROM bapok.pasar`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]string)
+	for rows.Next() {
+		var nama, id string
+		if err := rows.Scan(&nama, &id); err != nil {
+			return nil, err
+		}
+		m[nama] = id
+	}
+	return m, nil
+}
+
+func (r *Repository) UpsertHarga(ctx context.Context, komoditasID, pasarID string, harga int64, tanggal, inputOleh string) error {
+	_, err := r.db.Exec(ctx,
+		`INSERT INTO bapok.harga_harian (komoditas_id, pasar_id, harga, tanggal, input_oleh)
+		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (komoditas_id, pasar_id, tanggal)
+		 DO UPDATE SET harga = EXCLUDED.harga, input_oleh = EXCLUDED.input_oleh`,
+		komoditasID, pasarID, harga, tanggal, inputOleh,
+	)
+	return err
+}
+
 func (r *Repository) FindAlertsToCheck(ctx context.Context, komoditasID string) ([]AlertToCheck, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT id, user_nik, tipe, nominal

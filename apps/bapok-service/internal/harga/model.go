@@ -46,3 +46,17 @@ type AlertToCheck struct {
 	Nominal int64
 }
 
+type BulkCSVRow struct {
+	NamaKomoditas string
+	NamaPasar     string
+	Harga         int64
+	Tanggal       string
+}
+
+type BulkCSVResult struct {
+	Total   int      `json:"total"`
+	Sukses  int      `json:"sukses"`
+	Gagal   int      `json:"gagal"`
+	Errors  []string `json:"errors,omitempty"`
+}
+
