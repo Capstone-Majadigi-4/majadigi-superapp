@@ -9,6 +9,7 @@ import {
 import { ArmadaService } from './armada.service';
 import { ArmadaGateway } from './armada.gateway';
 import { UpdateLokasiDto } from './dto/update-lokasi.dto';
+import { success } from '../common/helpers/response.helper';
 
 @Controller('transjatim/armada')
 export class ArmadaController {
@@ -18,8 +19,9 @@ export class ArmadaController {
   ) {}
 
   @Get('koridor/:koridorId')
-  findByKoridor(@Param('koridorId', ParseUUIDPipe) koridorId: string) {
-    return this.armadaService.findByKoridor(koridorId);
+  async findByKoridor(@Param('koridorId', ParseUUIDPipe) koridorId: string) {
+    const data = await this.armadaService.findByKoridor(koridorId);
+    return success(data);
   }
 
   @Put(':id/lokasi')
@@ -28,12 +30,9 @@ export class ArmadaController {
     @Body() dto: UpdateLokasiDto,
   ) {
     const armada = await this.armadaService.updateLokasi(id, dto);
-
-    // Broadcast ke semua WS client di koridor ini
     if (armada.koridor_id) {
       this.armadaGateway.broadcastLokasi(armada.koridor_id, armada);
     }
-
-    return armada;
+    return success(armada, 'Lokasi berhasil diupdate');
   }
 }
