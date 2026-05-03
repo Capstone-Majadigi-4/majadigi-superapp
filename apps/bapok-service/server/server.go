@@ -4,6 +4,7 @@ import (
 	"bapok-service/config"
 	"bapok-service/internal/alert"
 	"bapok-service/internal/common"
+	"bapok-service/internal/fcm"
 	"bapok-service/internal/harga"
 	"bapok-service/internal/komoditas"
 	"bapok-service/internal/middleware"
@@ -36,8 +37,10 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	komoditasService := komoditas.NewService(komoditasRepo, rdb)
 	komoditasHandler := komoditas.NewHandler(komoditasService)
 
+	fcmClient    := fcm.NewClient(cfg.FCMServerKey)
+
 	hargaRepo    := harga.NewRepository(db)
-	hargaService := harga.NewService(hargaRepo, rdb)
+	hargaService := harga.NewService(hargaRepo, rdb, fcmClient)
 	hargaHandler := harga.NewHandler(hargaService)
 
 	alertRepo    := alert.NewRepository(db)

@@ -7,6 +7,8 @@ import (
 	"log"
 	"time"
 
+	"bapok-service/internal/fcm"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -15,10 +17,11 @@ const cacheTTL = 5 * time.Minute
 type Service struct {
 	repo *Repository
 	rdb  *redis.Client
+	fcm  *fcm.Client
 }
 
-func NewService(repo *Repository, rdb *redis.Client) *Service {
-	return &Service{repo: repo, rdb: rdb}
+func NewService(repo *Repository, rdb *redis.Client, fcmClient *fcm.Client) *Service {
+	return &Service{repo: repo, rdb: rdb, fcm: fcmClient}
 }
 
 func (s *Service) FindHarga(ctx context.Context, tanggal, pasarID string) ([]HargaWithDetail, error) {
@@ -153,7 +156,37 @@ func (s *Service) checkAlerts(ctx context.Context, komoditasID string, hargaBaru
 		if triggered {
 			if err := s.repo.TriggerAlert(ctx, a.ID); err != nil {
 				log.Printf("Failed to trigger alert %s: %v", a.ID, err)
+				continue
 			}
+
+			go s.sendAlertNotification(ctx, a.UserNik, a.Tipe, komoditasID, hargaBaru)
+		}
+	}
+}
+
+func (s *Service) sendAlertNotification(ctx context.Context, userNik, tipe, komoditasID string, harga int64) {
+	tokens, err := s.repo.GetFCMTokensByNik(ctx, userNik)
+	if err != nil || len(tokens) == 0 {
+		return
+	}
+
+	title := "Alert Harga Bapok"
+	body := fmt.Sprintf("Harga komoditas telah %s Rp%d", func() string {
+		if tipe == "naik_diatas" {
+			return "naik di atas"
+		}
+		return "turun di bawah"
+	}(), harga)
+
+	data := map[string]string{
+		"komoditas_id": komoditasID,
+		"tipe":         tipe,
+		"harga":        fmt.Sprintf("%d", harga),
+	}
+
+	for _, token := range tokens {
+		if err := s.fcm.Send(token, title, body, data); err != nil {
+			log.Printf("FCM send failed for user %s: %v", userNik, err)
 		}
 	}
 }

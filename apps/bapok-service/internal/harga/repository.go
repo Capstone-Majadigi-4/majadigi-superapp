@@ -138,6 +138,33 @@ func (r *Repository) UpsertHarga(ctx context.Context, komoditasID, pasarID strin
 	return err
 }
 
+func (r *Repository) GetFCMTokensByNik(ctx context.Context, userNik string) ([]string, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT rt.fcm_token
+		 FROM auth.refresh_tokens rt
+		 JOIN auth.users u ON u.id = rt.user_id
+		 WHERE u.nik = $1
+		   AND rt.fcm_token IS NOT NULL
+		   AND rt.is_revoked = false
+		   AND rt.expires_at > NOW()`,
+		userNik,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tokens []string
+	for rows.Next() {
+		var t string
+		if err := rows.Scan(&t); err != nil {
+			return nil, err
+		}
+		tokens = append(tokens, t)
+	}
+	return tokens, nil
+}
+
 func (r *Repository) FindAlertsToCheck(ctx context.Context, komoditasID string) ([]AlertToCheck, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT id, user_nik, tipe, nominal

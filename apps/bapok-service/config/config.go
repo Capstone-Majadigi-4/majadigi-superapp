@@ -9,14 +9,15 @@ import (
 
 
 type Config struct {
-	Port string
-	DBHost string
-	DBPort string
-	DBUser string
-	DBPassword string
-	DBName string
-	RedisURL string
+	Port           string
+	DBHost         string
+	DBPort         string
+	DBUser         string
+	DBPassword     string
+	DBName         string
+	RedisURL       string
 	AdminSecretKey string
+	FCMServerKey   string
 }
 
 func getEnv(key, fallback string) string {
@@ -40,5 +41,6 @@ func Load() *Config {
 		DBName: 		getEnv("DB_NAME", "majadigi_main"),
 		RedisURL: 		getEnv("REDIS_URL", "redis://localhost:6379"),
 		AdminSecretKey: getEnv("ADMIN_SECRET_KEY", ""),
+		FCMServerKey:   getEnv("FCM_SERVER_KEY", ""),
 	}
 }
