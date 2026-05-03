@@ -37,3 +37,11 @@ type CreateHargaRequest struct {
 	Tanggal     string `json:"tanggal" validate:"required"`
 	InputOleh   string `json:"input_oleh"`
 }
+
+type AlertToCheck struct {
+	ID      string
+	UserNik string
+	Tipe    string
+	Nominal int64
+}
+
