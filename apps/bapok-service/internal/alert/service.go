@@ -19,7 +19,14 @@ func (s *Service) FindByUser(ctx context.Context, userNik string) ([]AlertWithDe
 }
 
 func (s *Service) Create(ctx context.Context, userNik string, req CreateAlertRequest) (*PriceAlert, error) {
-	return s.repo.Create(ctx, userNik, req)
+	result, err := s.repo.Create(ctx, userNik, req)
+	if err != nil {
+		if err == ErrDuplicate {
+			return nil, common.NewConflict("Alert untuk komoditas dan tipe ini sudah ada")
+		}
+		return nil, err
+	}
+	return result, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id, userNik string) error {

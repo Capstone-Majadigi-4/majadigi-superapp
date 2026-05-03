@@ -17,30 +17,57 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 
 func (r *Repository) FindAll(ctx context.Context) ([]Komoditas, error) {
-	rows, err := r.db.Query(ctx,
-		`SELECT id, nama, kategori, satuan, ikon_url, is_active, created_at
-		 FROM bapok.komoditas WHERE is_active = true ORDER BY nama ASC`,
-	)
+	query := `
+		SELECT
+			k.id,
+			k.nama,
+			k.kategori,
+			k.satuan,
+			k.ikon_url,
+			k.is_active,
+			k.created_at,
+			CAST(AVG(h.harga) AS BIGINT)  AS harga_rata_rata,
+			MIN(h.harga)                   AS harga_terendah,
+			MAX(h.harga)                   AS harga_tertinggi,
+			MAX(h.tanggal::text)           AS tanggal_harga
+		FROM komoditas k
+		LEFT JOIN harga_harian h ON h.komoditas_id = k.id
+			AND h.tanggal = CURRENT_DATE
+		WHERE k.is_active = true
+		GROUP BY k.id, k.nama, k.kategori, k.satuan, k.ikon_url, k.is_active, k.created_at
+		ORDER BY k.nama ASC
+	`
 
+	rows, err := r.db.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-
 	defer rows.Close()
-	
-	
-	var result []Komoditas
 
+	var result []Komoditas
 	for rows.Next() {
 		var k Komoditas
-		if err := rows.Scan(&k.ID, &k.Nama, &k.Kategori, &k.Satuan, &k.IkonURL, &k.IsActive, &k.CreatedAt); err != nil {
+		err := rows.Scan(
+			&k.ID,
+			&k.Nama,
+			&k.Kategori,
+			&k.Satuan,
+			&k.IkonURL,
+			&k.IsActive,
+			&k.CreatedAt,
+			&k.HargaRataRata,
+			&k.HargaTerendah,
+			&k.HargaTertinggi,
+			&k.TanggalHarga,
+		)
+		if err != nil {
 			return nil, err
 		}
 		result = append(result, k)
 	}
-
 	return result, nil
 }
+
 
 func (r *Repository) FindById(ctx context.Context, id string) (*Komoditas, error) {
 	var k Komoditas

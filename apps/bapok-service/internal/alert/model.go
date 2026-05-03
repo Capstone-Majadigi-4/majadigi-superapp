@@ -36,4 +36,5 @@ type CreateAlertRequest struct {
 
 
 var ErrNotFound = errors.New("alert tidak ditemukan")
+var ErrDuplicate = errors.New("alert untuk komoditas dan tipe ini sudah ada")
 

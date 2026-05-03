@@ -80,6 +80,8 @@ func (r *Repository) Create(ctx context.Context, req CreateHargaRequest) (*Harga
 	err := r.db.QueryRow(ctx,
 		`INSERT INTO bapok.harga_harian (komoditas_id, pasar_id, harga, tanggal, input_oleh)
 		 VALUES ($1, $2, $3, $4, $5)
+		 ON CONFLICT (komoditas_id, pasar_id, tanggal)
+		 DO UPDATE SET harga = EXCLUDED.harga, input_oleh = EXCLUDED.input_oleh
 		 RETURNING id, komoditas_id, pasar_id, harga, tanggal, input_oleh, created_at`,
 		req.KomoditasID, req.PasarID, req.Harga, req.Tanggal, req.InputOleh,
 	).Scan(&h.ID, &h.KomoditasID, &h.PasarID, &h.Harga, &h.Tanggal, &h.InputOleh, &h.CreatedAt)

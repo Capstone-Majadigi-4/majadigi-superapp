@@ -45,6 +45,8 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		return common.Error(c, "Request tidak valid", 400)
 	}
 
+	req.InputOleh = c.Get("x-user-nik")
+
 	if errs := common.ValidateStruct(req); errs != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"status":  "error",

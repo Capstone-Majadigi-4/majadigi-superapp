@@ -3,6 +3,7 @@ package alert
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -51,6 +52,9 @@ func (r *Repository) Create(ctx context.Context, userNik string, req CreateAlert
 	).Scan(&a.ID, &a.UserNik, &a.KomoditasID, &a.Tipe, &a.Nominal,
 		&a.IsActive, &a.LastTriggeredAt, &a.CreatedAt)
 	if err != nil {
+		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
+			return nil, ErrDuplicate
+		}
 		return nil, err
 	}
 	return &a, nil

@@ -58,9 +58,6 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	api.Get("/komoditas", komoditasHandler.FindAll)
 	api.Get("/komoditas/:id", komoditasHandler.FindById)
 
-	// pasar
-	api.Get("/pasar", pasarHandler.FindAll)
-
 	// harga
 	api.Get("/harga", hargaHandler.FindHarga)
 	api.Get("/harga/:komoditas_id/histori", hargaHandler.FindHistori)
