@@ -2,9 +2,13 @@ package komoditas
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrNotFound = errors.New("komoditas tidak ditemukan")
 
 
 type Repository struct {
@@ -98,4 +102,42 @@ func (r *Repository) Create(ctx context.Context, req CreateKomoditasRequest) (*K
 	}
 
 	return &k, nil
+}
+
+func (r *Repository) Update(ctx context.Context, id string, req UpdateKomoditasRequest) (*Komoditas, error) {
+	var k Komoditas
+
+	err := r.db.QueryRow(ctx,
+		`UPDATE bapok.komoditas
+		 SET
+		   nama      = COALESCE($2, nama),
+		   kategori  = COALESCE($3, kategori),
+		   satuan    = COALESCE($4, satuan),
+		   ikon_url  = COALESCE($5, ikon_url),
+		   is_active = COALESCE($6, is_active)
+		 WHERE id = $1
+		 RETURNING id, nama, kategori, satuan, ikon_url, is_active, created_at`,
+		id, req.Nama, req.Kategori, req.Satuan, req.IkonURL, req.IsActive,
+	).Scan(&k.ID, &k.Nama, &k.Kategori, &k.Satuan, &k.IkonURL, &k.IsActive, &k.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+
+	return &k, nil
+}
+
+func (r *Repository) Delete(ctx context.Context, id string) error {
+	result, err := r.db.Exec(ctx,
+		`DELETE FROM bapok.komoditas WHERE id = $1`, id,
+	)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return nil
 }

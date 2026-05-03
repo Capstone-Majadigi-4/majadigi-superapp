@@ -73,6 +73,8 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	// admin
 	admin := api.Group("/admin", middleware.AdminGuard(cfg.AdminSecretKey))
 	admin.Post("/komoditas", komoditasHandler.Create)
+	admin.Patch("/komoditas/:id", komoditasHandler.Update)
+	admin.Delete("/komoditas/:id", komoditasHandler.Delete)
 admin.Post("/harga", hargaHandler.Create)
 
 	return &Server{app: app, cfg: cfg}

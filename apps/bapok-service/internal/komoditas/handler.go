@@ -38,15 +38,15 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	var req CreateKomoditasRequest
 	if err := c.BodyParser(&req); err != nil {
 		log.Printf("Error parsing request body: %v", err)
-		return common.Error(c, "Request tidak Valid",400)
+		return common.Error(c, "Request tidak Valid", 400)
 	}
 
 	if errs := common.ValidateStruct(req); errs != nil {
 		return c.Status(400).JSON(fiber.Map{
-			"status": "error",
+			"status":  "error",
 			"message": "Validasi gagal",
-			"errors": errs,
-			"code": 400,
+			"errors":  errs,
+			"code":    400,
 		})
 	}
 
@@ -56,4 +56,36 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	}
 
 	return common.Success(c, result, "Komoditas berhasil dibuat", 201)
+}
+
+func (h *Handler) Update(c *fiber.Ctx) error {
+	id := c.Params("id")
+	var req UpdateKomoditasRequest
+	if err := c.BodyParser(&req); err != nil {
+		return common.Error(c, "Request tidak valid", 400)
+	}
+
+	if errs := common.ValidateStruct(req); errs != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Validasi gagal",
+			"errors":  errs,
+			"code":    400,
+		})
+	}
+
+	result, err := h.service.Update(c.Context(), id, req)
+	if err != nil {
+		return common.HandleError(c, err)
+	}
+
+	return common.Success(c, result, "Komoditas berhasil diupdate", 200)
+}
+
+func (h *Handler) Delete(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if err := h.service.Delete(c.Context(), id); err != nil {
+		return common.HandleError(c, err)
+	}
+	return common.Success(c, nil, "Komoditas berhasil dihapus", 200)
 }

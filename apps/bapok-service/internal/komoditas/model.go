@@ -20,8 +20,16 @@ type Komoditas struct {
 
 
 type CreateKomoditasRequest struct {
-	Nama string    `json:"nama" validate:"required"`
+	Nama     string `json:"nama" validate:"required"`
 	Kategori string `json:"kategori" validate:"required"`
-	Satuan string   `json:"satuan" validate:"required"`
-	IkonURL string  `json:"ikon_url" validate:"required,url"`
+	Satuan   string `json:"satuan" validate:"required"`
+	IkonURL  string `json:"ikon_url" validate:"required,url"`
+}
+
+type UpdateKomoditasRequest struct {
+	Nama     *string `json:"nama"`
+	Kategori *string `json:"kategori"`
+	Satuan   *string `json:"satuan"`
+	IkonURL  *string `json:"ikon_url" validate:"omitempty,url"`
+	IsActive *bool   `json:"is_active"`
 }

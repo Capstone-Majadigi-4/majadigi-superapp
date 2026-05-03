@@ -54,7 +54,7 @@ func (s *Service) FindById(ctx context.Context, id string) (*Komoditas, error) {
 }
 
 func (s *Service) Create(ctx context.Context, req CreateKomoditasRequest) (*Komoditas, error) {
-	result, err:= s.repo.Create(ctx, req)
+	result, err := s.repo.Create(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -62,4 +62,31 @@ func (s *Service) Create(ctx context.Context, req CreateKomoditasRequest) (*Komo
 	s.rdb.Del(ctx, cacheKey)
 
 	return result, nil
+}
+
+func (s *Service) Update(ctx context.Context, id string, req UpdateKomoditasRequest) (*Komoditas, error) {
+	result, err := s.repo.Update(ctx, id, req)
+	if err != nil {
+		if err == ErrNotFound {
+			return nil, common.NewNotFound("Komoditas tidak ditemukan")
+		}
+		return nil, err
+	}
+
+	s.rdb.Del(ctx, cacheKey)
+
+	return result, nil
+}
+
+func (s *Service) Delete(ctx context.Context, id string) error {
+	if err := s.repo.Delete(ctx, id); err != nil {
+		if err == ErrNotFound {
+			return common.NewNotFound("Komoditas tidak ditemukan")
+		}
+		return err
+	}
+
+	s.rdb.Del(ctx, cacheKey)
+
+	return nil
 }
