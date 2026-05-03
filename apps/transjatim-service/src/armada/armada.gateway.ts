@@ -3,6 +3,7 @@ import {
   WebSocketServer,
   OnGatewayConnection,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server, Socket } from 'socket.io';
@@ -16,6 +17,8 @@ export class ArmadaGateway implements OnGatewayConnection {
   @WebSocketServer()
   server!: Server;
 
+  private readonly logger = new Logger(ArmadaGateway.name);
+
   constructor(
     @InjectRepository(Armada)
     private readonly armadaRepo: Repository<Armada>,
@@ -23,14 +26,18 @@ export class ArmadaGateway implements OnGatewayConnection {
 
   async handleConnection(client: Socket) {
     const koridorId = client.handshake.query.koridor_id as string;
+    this.logger.log(`Client connected: ${client.id}, koridor_id: ${koridorId}`);
+
     if (!koridorId) {
+      this.logger.warn(`Client ${client.id} disconnected: no koridor_id`);
       client.disconnect();
       return;
     }
 
-    client.join(`koridor:${koridorId}`);
+    await client.join(`koridor:${koridorId}`);
+    const rooms = Array.from(client.rooms);
+    this.logger.log(`Client ${client.id} joined rooms: ${rooms.join(', ')}`);
 
-    // Kirim snapshot posisi armada saat client connect
     const armada = await this.armadaRepo.find({
       where: { koridor_id: koridorId, status: 'aktif' },
     });
@@ -48,7 +55,11 @@ export class ArmadaGateway implements OnGatewayConnection {
   }
 
   broadcastLokasi(koridorId: string, armada: Armada) {
-    this.server.to(`koridor:${koridorId}`).emit('ARMADA_BERGERAK', {
+    const room = `koridor:${koridorId}`;
+    const sockets = this.server.sockets.adapter.rooms.get(room);
+    this.logger.log(`Broadcasting to room: ${room}, clients in room: ${sockets?.size ?? 0}`);
+
+    this.server.to(room).emit('ARMADA_BERGERAK', {
       id: armada.id,
       kode_bus: armada.kode_bus,
       lat: armada.lat ? Number.parseFloat(armada.lat as any) : null,
