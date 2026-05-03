@@ -8,6 +8,7 @@ import (
 	"bapok-service/internal/komoditas"
 	"bapok-service/internal/middleware"
 	"bapok-service/internal/pasar"
+	"bapok-service/internal/ticker"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -48,6 +49,10 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	alertService := alert.NewService(alertRepo)
 	alertHandler := alert.NewHandler(alertService)
 
+	tickerRepo    := ticker.NewRepository(db)
+	tickerService := ticker.NewService(tickerRepo, rdb)
+	tickerHandler := ticker.NewHandler(tickerService)
+
 	// routes
 	api := app.Group("/api/v1/bapok")
 	api.Get("/health", func(c *fiber.Ctx) error {
@@ -57,6 +62,9 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	// komoditas
 	api.Get("/komoditas", komoditasHandler.FindAll)
 	api.Get("/komoditas/:id", komoditasHandler.FindById)
+
+	// ticker
+	api.Get("/ticker", tickerHandler.FindTicker)
 
 	// harga
 	api.Get("/harga", hargaHandler.FindHarga)
