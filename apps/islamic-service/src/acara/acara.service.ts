@@ -28,7 +28,7 @@ export class AcaraService {
 
     const qb = this.acaraRepo
       .createQueryBuilder('a')
-      .where('a.status !- :batal', { batal: 'dibatalkan' });
+      .where('a.status != :batal', { batal: 'dibatalkan' });
 
     if (tanggal) qb.andWhere('a.tanggal = :tanggal', { tanggal });
     if (status) qb.andWhere('a.status = :status', { status });

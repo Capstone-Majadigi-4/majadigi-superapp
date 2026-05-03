@@ -64,6 +64,22 @@ export class FasilitasService {
     });
     if (!fasilitas) throw new NotFoundException('Fasilitas tidak ditemukan');
 
+    // Cek booking user yang sudah ada di rentang tanggal yang sama
+    const sudahBooking = await this.dataSource.query(
+      `SELECT id FROM islamic.booking_fasilitas
+   WHERE fasilitas_id = $1
+     AND user_nik = $2
+     AND status IN ('pending_review', 'disetujui')
+     AND tanggal_mulai <= $4
+     AND tanggal_selesai >= $3`,
+      [fasilitasId, userNik, dto.tanggal_mulai, dto.tanggal_selesai],
+    );
+
+    if (sudahBooking.length > 0)
+      throw new ConflictException(
+        'Anda sudah memiliki booking pada rentang tanggal tersebut',
+      );
+
     // Cek overlap tanggal dengan booking yang sudah disetujui
     const overlap = await this.dataSource.query(
       `SELECT id FROM islamic.booking_fasilitas
