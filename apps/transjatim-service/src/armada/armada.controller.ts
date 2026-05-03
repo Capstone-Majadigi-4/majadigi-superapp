@@ -10,7 +10,7 @@ import { ArmadaService } from './armada.service';
 import { ArmadaGateway } from './armada.gateway';
 import { UpdateLokasiDto } from './dto/update-lokasi.dto';
 
-@Controller('armada')
+@Controller('transjatim/armada')
 export class ArmadaController {
   constructor(
     private readonly armadaService: ArmadaService,

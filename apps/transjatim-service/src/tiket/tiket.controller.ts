@@ -11,7 +11,7 @@ import { TiketService } from './tiket.service';
 import { BeliTiketDto } from './dto/beli-tiket.dto';
 import { ValidasiTiketDto } from './dto/validasi-tiket.dto';
 
-@Controller('tiket')
+@Controller('transjatim/tiket')
 export class TiketController {
   constructor(private readonly tiketService: TiketService) {}
 

@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { HalteService } from './halte.service';
 import { FindTerdekatDto } from './dto/find-terdekat.dto';
 
-@Controller('halte')
+@Controller('transjatim/halte')
 export class HalteController {
   constructor(private readonly halteService: HalteService) {}
 
