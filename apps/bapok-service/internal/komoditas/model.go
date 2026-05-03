@@ -1,5 +1,7 @@
 package komoditas
 
+import "time"
+
 
 type Komoditas struct {
 	ID  string    `json:"id"`
@@ -8,7 +10,7 @@ type Komoditas struct {
 	Satuan string   `json:"satuan"`
 	IkonURL string  `json:"ikon_url"`
 	IsActive bool    `json:"is_active"`
-	CreatedAt string  `json:"created_at"`
+	CreatedAt time.Time  `json:"created_at"`
 
 }
 
