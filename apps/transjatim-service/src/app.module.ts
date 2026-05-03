@@ -7,6 +7,7 @@ import { KoridorModule } from './koridor/koridor.module';
 import { HalteModule } from './halte/halte.module';
 import { ArmadaModule } from './armada/armada.module';
 import { TiketModule } from './tiket/tiket.module';
+import { SeederModule } from './database/seeder.module';
 
 @Module({
   imports: [
@@ -43,6 +44,8 @@ import { TiketModule } from './tiket/tiket.module';
     ArmadaModule,
 
     TiketModule,
+
+    SeederModule
   ],
 })
 export class AppModule {}
