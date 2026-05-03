@@ -161,7 +161,7 @@ func insertHargaPerTanggal(ctx context.Context, db *pgxpool.Pool, cfg hargaSeedC
 		for pi, pasarID := range cfg.pasarIDs {
 			harga := max(dasar+cfg.variasiPasar[pi%len(cfg.variasiPasar)]-dayOffset, 1000)
 			db.Exec(ctx,
-				`INSERT INTO bapok.harga (komoditas_id, pasar_id, harga, tanggal) VALUES ($1, $2, $3, $4)`,
+				`INSERT INTO bapok.harga_harian (komoditas_id, pasar_id, harga, tanggal) VALUES ($1, $2, $3, $4)`,
 				k.id, pasarID, harga, tanggal,
 			)
 			count++
