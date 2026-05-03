@@ -6,6 +6,7 @@ import { createKeyv } from '@keyv/redis';
 import { KoridorModule } from './koridor/koridor.module';
 import { HalteModule } from './halte/halte.module';
 import { ArmadaModule } from './armada/armada.module';
+import { TiketModule } from './tiket/tiket.module';
 
 @Module({
   imports: [
@@ -40,6 +41,8 @@ import { ArmadaModule } from './armada/armada.module';
     HalteModule,
 
     ArmadaModule,
+
+    TiketModule,
   ],
 })
 export class AppModule {}
