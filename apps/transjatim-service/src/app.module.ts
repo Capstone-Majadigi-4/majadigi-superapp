@@ -5,6 +5,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
 import { KoridorModule } from './koridor/koridor.module';
 import { HalteModule } from './halte/halte.module';
+import { ArmadaModule } from './armada/armada.module';
 
 @Module({
   imports: [
@@ -37,6 +38,8 @@ import { HalteModule } from './halte/halte.module';
     KoridorModule,
 
     HalteModule,
+
+    ArmadaModule,
   ],
 })
 export class AppModule {}
