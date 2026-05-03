@@ -3,14 +3,15 @@ package harga
 import "time"
 
 type HargaHarian struct {
-	ID          string    `json:"id"`
-	KomoditasID string    `json:"komoditas_id"`
-	PasarID     string    `json:"pasar_id"`
-	Harga       int64     `json:"harga"`
-	Tanggal     string    `json:"tanggal"`
-	InputOleh   string    `json:"input_oleh"`
-	CreatedAt   time.Time `json:"created_at"`
+    ID          string    `json:"id"`
+    KomoditasID string    `json:"komoditas_id"`
+    PasarID     string    `json:"pasar_id"`
+    Harga       int64     `json:"harga"`
+    Tanggal     string    `json:"tanggal"`
+    InputOleh   *string   `json:"input_oleh"`
+    CreatedAt   time.Time `json:"created_at"`
 }
+
 
 type HargaWithDetail struct {
 	ID            string `json:"id"`
