@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { createKeyv } from '@keyv/redis';
+import { KoridorModule } from './koridor/koridor.module';
+import { HalteModule } from './halte/halte.module';
 
 @Module({
   imports: [
@@ -31,6 +33,10 @@ import { createKeyv } from '@keyv/redis';
         logging: config.get('NODE_ENV') === 'development',
       }),
     }),
+
+    KoridorModule,
+
+    HalteModule,
   ],
 })
 export class AppModule {}
