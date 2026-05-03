@@ -5,7 +5,7 @@ import {
   JoinColumn,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Acara } from '../../acara/entities/acara.entity';
+import { Acara } from './acara.entity';
 
 @Entity({ schema: 'islamic', name: 'pendaftaran_acara' })
 export class PendaftaranAcara {
