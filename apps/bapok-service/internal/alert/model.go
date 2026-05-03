@@ -1,6 +1,9 @@
 package alert
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type PriceAlert struct {
 	ID              string     `json:"id"`
@@ -29,3 +32,8 @@ type CreateAlertRequest struct {
 	Tipe        string `json:"tipe" validate:"required,oneof=naik_diatas turun_dibawah"`
 	Nominal     int64  `json:"nominal" validate:"required,min=1"`
 }
+
+
+
+var ErrNotFound = errors.New("alert tidak ditemukan")
+
