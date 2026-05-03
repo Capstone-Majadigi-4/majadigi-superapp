@@ -13,13 +13,13 @@ func ValidateStruct(s any) []ValidationError {
 	var result []ValidationError
 
 	err := validate.Struct(s)
-	if err != nil {
+	if err == nil {
 		return nil
 	}
 
 	for _, e := range err.(validator.ValidationErrors) {
 		result = append(result, ValidationError{
-			Field: e.Field(),
+			Field:   e.Field(),
 			Message: e.Tag(),
 		})
 	}

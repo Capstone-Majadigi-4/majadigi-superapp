@@ -3,6 +3,7 @@ package harga
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,7 @@ func (h *Handler) FindHarga(c *fiber.Ctx) error {
 
 	result, err := h.service.FindHarga(c.Context(), tanggal, pasarID)
 	if err != nil {
+		log.Printf("Error finding harga: %v", err)
 		return common.HandleError(c, err)
 	}
 	return common.Success(c, result, "OK", 200)

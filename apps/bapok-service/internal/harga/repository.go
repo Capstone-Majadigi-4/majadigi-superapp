@@ -16,7 +16,7 @@ func NewRepository(db *pgxpool.Pool) *Repository {
 
 func (r *Repository) FindByTanggalAndPasar(ctx context.Context, tanggal, pasarID string) ([]HargaWithDetail, error) {
 	query := `
-		SELECT h.id, h.komoditas_id, k.nama, k.satuan, h.pasar_id, p.nama, h.harga, h.tanggal
+		SELECT h.id, h.komoditas_id, k.nama, k.satuan, h.pasar_id, p.nama, h.harga, h.tanggal::text
 		FROM bapok.harga_harian h
 		JOIN bapok.komoditas k ON k.id = h.komoditas_id
 		JOIN bapok.pasar p ON p.id = h.pasar_id
@@ -51,7 +51,7 @@ func (r *Repository) FindByTanggalAndPasar(ctx context.Context, tanggal, pasarID
 
 func (r *Repository) FindHistori(ctx context.Context, komoditasID string) ([]HargaHistori, error) {
 	rows, err := r.db.Query(ctx,
-		`SELECT h.tanggal, h.harga, h.pasar_id, p.nama
+		`SELECT h.tanggal::text, h.harga, h.pasar_id, p.nama
 		 FROM bapok.harga_harian h
 		 JOIN bapok.pasar p ON p.id = h.pasar_id
 		 WHERE h.komoditas_id = $1
