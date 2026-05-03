@@ -35,29 +35,26 @@ export class HalteService {
 
     return this.dataSource.query(
       `
-      SELECT
-        id, koridor_id, nama, urutan,
-        lat::float, lng::float,
-        ROUND(
-          6371000 * acos(
-            LEAST(1.0, cos(radians($1)) * cos(radians(lat::float))
-            * cos(radians(lng::float) - radians($2))
-            + sin(radians($1)) * sin(radians(lat::float)))
-          )
-        ) AS jarak_meter
-      FROM transjatim.halte
-      WHERE lat IS NOT NULL AND lng IS NOT NULL
-      HAVING ROUND(
+  SELECT * FROM (
+    SELECT
+      id, koridor_id, nama, urutan,
+      lat::float, lng::float,
+      ROUND(
         6371000 * acos(
           LEAST(1.0, cos(radians($1)) * cos(radians(lat::float))
           * cos(radians(lng::float) - radians($2))
           + sin(radians($1)) * sin(radians(lat::float)))
         )
-      ) <= $3
-      ORDER BY jarak_meter ASC
-      LIMIT 5
-      `,
+      ) AS jarak_meter
+    FROM transjatim.halte
+    WHERE lat IS NOT NULL AND lng IS NOT NULL
+  ) sub
+  WHERE jarak_meter <= $3
+  ORDER BY jarak_meter ASC
+  LIMIT 5
+  `,
       [lat, lng, radius],
     );
+
   }
 }
