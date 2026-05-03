@@ -1,5 +1,6 @@
-import { Halte } from 'src/halte/entities/halte.entity';
+
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Halte } from '../../halte/entities/halte.entity';
 
 @Entity({ schema: 'transjatim', name: 'koridor' })
 export class Koridor {
