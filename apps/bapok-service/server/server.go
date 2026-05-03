@@ -7,7 +7,6 @@ import (
 	"bapok-service/internal/harga"
 	"bapok-service/internal/komoditas"
 	"bapok-service/internal/middleware"
-	"bapok-service/internal/pasar"
 	"bapok-service/internal/ticker"
 
 	"github.com/gofiber/fiber/v2"
@@ -36,10 +35,6 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	komoditasRepo    := komoditas.NewRepository(db)
 	komoditasService := komoditas.NewService(komoditasRepo, rdb)
 	komoditasHandler := komoditas.NewHandler(komoditasService)
-
-	pasarRepo    := pasar.NewRepository(db)
-	pasarService := pasar.NewService(pasarRepo, rdb)
-	pasarHandler := pasar.NewHandler(pasarService)
 
 	hargaRepo    := harga.NewRepository(db)
 	hargaService := harga.NewService(hargaRepo, rdb)
@@ -78,8 +73,7 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	// admin
 	admin := api.Group("/admin", middleware.AdminGuard(cfg.AdminSecretKey))
 	admin.Post("/komoditas", komoditasHandler.Create)
-	admin.Post("/pasar", pasarHandler.Create)
-	admin.Post("/harga", hargaHandler.Create)
+admin.Post("/harga", hargaHandler.Create)
 
 	return &Server{app: app, cfg: cfg}
 }
