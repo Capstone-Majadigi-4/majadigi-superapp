@@ -185,7 +185,7 @@ func (s *Service) sendAlertNotification(ctx context.Context, userNik, tipe, komo
 	}
 
 	for _, token := range tokens {
-		if err := s.fcm.Send(token, title, body, data); err != nil {
+		if err := s.fcm.Send(ctx, token, title, body, data); err != nil {
 			log.Printf("FCM send failed for user %s: %v", userNik, err)
 		}
 	}

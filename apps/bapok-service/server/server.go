@@ -37,7 +37,7 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	komoditasService := komoditas.NewService(komoditasRepo, rdb)
 	komoditasHandler := komoditas.NewHandler(komoditasService)
 
-	fcmClient    := fcm.NewClient(cfg.FCMServerKey)
+	fcmClient    := fcm.NewClient(cfg.FCMProjectID, cfg.FCMCredentials)
 
 	hargaRepo    := harga.NewRepository(db)
 	hargaService := harga.NewService(hargaRepo, rdb, fcmClient)
