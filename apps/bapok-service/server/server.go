@@ -24,8 +24,9 @@ type Server struct {
 
 func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	app := fiber.New(fiber.Config{
+		BodyLimit: 5 * 1024 * 1024, // 5 MB
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			return common.Error(c,err.Error(), 500)
+			return common.Error(c, err.Error(), 500)
 		},
 	})
 
