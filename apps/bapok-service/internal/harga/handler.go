@@ -25,6 +25,8 @@ func (h *Handler) FindHarga(c *fiber.Ctx) error {
 	tanggal := c.Query("tanggal")
 	if tanggal == "" {
 		tanggal = time.Now().Format("2006-01-02")
+	} else if _, err := time.Parse("2006-01-02", tanggal); err != nil {
+		return common.Error(c, "Format tanggal tidak valid, gunakan YYYY-MM-DD", 400)
 	}
 	pasarID := c.Query("pasar_id")
 
@@ -84,11 +86,17 @@ func (h *Handler) BulkCSV(c *fiber.Ctx) error {
 			continue
 		}
 
+		tanggal := strings.TrimSpace(rec[3])
+		if _, err := time.Parse("2006-01-02", tanggal); err != nil {
+			parseErrors = append(parseErrors, fmt.Sprintf("baris %d: format tanggal tidak valid (gunakan YYYY-MM-DD)", lineNum))
+			continue
+		}
+
 		rows = append(rows, BulkCSVRow{
 			NamaKomoditas: strings.TrimSpace(rec[0]),
 			NamaPasar:     strings.TrimSpace(rec[1]),
 			Harga:         harga,
-			Tanggal:       strings.TrimSpace(rec[3]),
+			Tanggal:       tanggal,
 		})
 	}
 
