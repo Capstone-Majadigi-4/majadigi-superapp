@@ -77,11 +77,7 @@ func (s *Service) Create(ctx context.Context, req CreateHargaRequest) (*HargaHar
 	}
 
 	// invalidasi cache harga tanggal ini
-	pattern := fmt.Sprintf("bapok:harga:%s:*", req.Tanggal)
-	keys, _ := s.rdb.Keys(ctx, pattern).Result()
-	if len(keys) > 0 {
-		s.rdb.Del(ctx, keys...)
-	}
+	s.scanAndDelete(ctx, fmt.Sprintf("bapok:harga:%s:*", req.Tanggal))
 
 	// invalidasi cache histori komoditas
 	s.rdb.Del(ctx, fmt.Sprintf("bapok:histori:%s", req.KomoditasID))
@@ -130,13 +126,29 @@ func (s *Service) BulkCSV(ctx context.Context, rows []BulkCSVRow, inputOleh stri
 		result.Sukses++
 
 		// invalidasi cache harga tanggal ini
-		pattern := fmt.Sprintf("bapok:harga:%s:*", row.Tanggal)
-		if keys, _ := s.rdb.Keys(ctx, pattern).Result(); len(keys) > 0 {
-			s.rdb.Del(ctx, keys...)
-		}
+		s.scanAndDelete(ctx, fmt.Sprintf("bapok:harga:%s:*", row.Tanggal))
 	}
 
 	return result, nil
+}
+
+// scanAndDelete menghapus semua key Redis yang cocok dengan pattern menggunakan SCAN
+// (menghindari KEYS yang bersifat blocking O(N)).
+func (s *Service) scanAndDelete(ctx context.Context, pattern string) {
+	var cursor uint64
+	for {
+		keys, next, err := s.rdb.Scan(ctx, cursor, pattern, 100).Result()
+		if err != nil {
+			break
+		}
+		if len(keys) > 0 {
+			s.rdb.Del(ctx, keys...)
+		}
+		cursor = next
+		if cursor == 0 {
+			break
+		}
+	}
 }
 
 func (s *Service) checkAlerts(ctx context.Context, komoditasID string, hargaBaru int64) {
@@ -159,7 +171,7 @@ func (s *Service) checkAlerts(ctx context.Context, komoditasID string, hargaBaru
 				continue
 			}
 
-			go s.sendAlertNotification(ctx, a.UserNik, a.Tipe, komoditasID, hargaBaru)
+			s.sendAlertNotification(ctx, a.UserNik, a.Tipe, komoditasID, hargaBaru)
 		}
 	}
 }
