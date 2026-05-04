@@ -34,8 +34,8 @@ func (r *Repository) FindAll(ctx context.Context) ([]Komoditas, error) {
 			MIN(h.harga)                   AS harga_terendah,
 			MAX(h.harga)                   AS harga_tertinggi,
 			MAX(h.tanggal::text)           AS tanggal_harga
-		FROM komoditas k
-		LEFT JOIN harga_harian h ON h.komoditas_id = k.id
+		FROM bapok.komoditas k
+		LEFT JOIN bapok.harga_harian h ON h.komoditas_id = k.id
 			AND h.tanggal = CURRENT_DATE
 		WHERE k.is_active = true
 		GROUP BY k.id, k.nama, k.kategori, k.satuan, k.ikon_url, k.is_active, k.created_at
