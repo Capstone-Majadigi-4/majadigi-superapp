@@ -44,9 +44,8 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    # Nunggu gateway dari BE
-    # depends_on:
-    #   - gateway
+    depends_on:
+      - gateway
     networks:
       - majadigi-network
       
@@ -58,6 +57,51 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
+    networks:
+      - majadigi-network
+
+  # --- BACKAND SERVICES ---
+  gateway:
+    image: node:20-alpine
+    container_name: majadigi-gateway
+    working_dir: /usr/src/app
+    # Sinkronisasi kode lokal ke dalam kontainer
+    volumes:
+      - ../apps/gateway:/usr/src/app
+    # Instalasi pnpm dan menjalankan server mode development
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
+    ports:
+      - "${GATEWAY_PORT:-3000}:3000"
+    env_file:
+      - ../.env
+    networks:
+      - majadigi-network
+
+  auth-service:
+    image: node:20-alpine
+    container_name: majadigi-auth
+    working_dir: /usr/src/app
+    volumes:
+      - ../apps/auth-service:/usr/src/app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
+    ports:
+      - "${AUTH_SERVICE_PORT:-3001}:3000"
+    env_file:
+      - ../.env
+    networks:
+      - majadigi-network
+      
+  transjatim-service:
+    image: node:20-alpine
+    container_name: majadigi-transjatim
+    working_dir: /usr/src/app
+    volumes:
+      - ../apps/transjatim-service:/usr/src/app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
+    ports:
+      - "3002:3000"
+    env_file:
+      - ../.env
     networks:
       - majadigi-network
 
