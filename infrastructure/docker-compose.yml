@@ -85,7 +85,7 @@ services:
       - ../apps/auth-service:/usr/src/app
     command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
     ports:
-      - "${AUTH_SERVICE_PORT:-3001}:3000"
+      - "${AUTH_SERVICE_PORT:-3001}:3001"
     env_file:
       - ../.env
     networks:
@@ -99,7 +99,7 @@ services:
       - ../apps/transjatim-service:/usr/src/app
     command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
     ports:
-      - "3002:3000"
+      - "3006:3006"
     env_file:
       - ../.env
     networks:
