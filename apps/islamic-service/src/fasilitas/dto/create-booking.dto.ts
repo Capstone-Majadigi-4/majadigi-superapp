@@ -5,6 +5,7 @@ import {
   IsOptional,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateBookingDto {
   @IsString()
@@ -19,6 +20,7 @@ export class CreateBookingDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number.parseInt(value, 10))
   estimasi_peserta?: number;
 
   @IsOptional()

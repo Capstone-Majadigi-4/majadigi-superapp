@@ -15,7 +15,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateFasilitasDto } from './dto/create-fasilitas.dto';
 import { TolakBookingDto } from './dto/tolak-booking.dto';
 import { MinioService } from '../common/minio/minio.service';
-import path from 'path/win32';
+import path from 'node:path/win32';
 
 const FASILITAS_CACHE_KEY = 'islamic:fasilitas:all';
 const FASILITAS_TTL_MS = 5 * 60 * 1000;
@@ -61,13 +61,17 @@ export class FasilitasService {
     return { ...fasilitas, tanggal_terbooked: bookings };
   }
 
-  async booking(fasilitasId: string, userNik: string, dto: CreateBookingDto) {
+  async booking(
+    fasilitasId: string,
+    userNik: string,
+    dto: CreateBookingDto,
+    file: Express.Multer.File,
+  ) {
     const fasilitas = await this.fasilitasRepo.findOne({
       where: { id: fasilitasId, is_active: true },
     });
     if (!fasilitas) throw new NotFoundException('Fasilitas tidak ditemukan');
 
-    // Cek booking user yang sudah ada di rentang tanggal yang sama
     const sudahBooking = await this.dataSource.query(
       `SELECT id FROM islamic.booking_fasilitas
    WHERE fasilitas_id = $1
@@ -83,7 +87,6 @@ export class FasilitasService {
         'Anda sudah memiliki booking pada rentang tanggal tersebut',
       );
 
-    // Cek overlap tanggal dengan booking yang sudah disetujui
     const overlap = await this.dataSource.query(
       `SELECT id FROM islamic.booking_fasilitas
        WHERE fasilitas_id = $1
@@ -97,6 +100,17 @@ export class FasilitasService {
       throw new ConflictException(
         'Fasilitas sudah terbooked pada tanggal tersebut',
       );
+
+    let dokumen_url = '';
+    if (file) {
+      const ext = path.extname(file.originalname);
+      const filename = `booking/dokumen-${uuidv4()}${ext}`;
+      dokumen_url = await this.minio.uploadFile(
+        filename,
+        file.buffer,
+        file.mimetype,
+      );
+    }
 
     const selisihHari =
       Math.ceil(
@@ -114,14 +128,13 @@ export class FasilitasService {
       tanggal_mulai: dto.tanggal_mulai,
       tanggal_selesai: dto.tanggal_selesai,
       estimasi_peserta: dto.estimasi_peserta,
-      dokumen_url: dto.dokumen_url,
+      dokumen_url,
       estimasi_biaya: estimasiBiaya,
       kode_bayar: `ISL-${uuidv4().slice(0, 8).toUpperCase()}`,
       status: 'pending_review',
     });
 
-    const saved = await this.bookingRepo.save(booking);
-    return saved;
+    return this.bookingRepo.save(booking);
   }
 
   async riwayatSaya(userNik: string) {
@@ -146,10 +159,9 @@ export class FasilitasService {
       );
     }
 
-    // Gabungkan dto dengan URL gambar yang baru di-upload
     const fasilitas = this.fasilitasRepo.create({
       ...dto,
-      foto_url, // Sesuaikan dengan nama kolom di entity kamu, misal 'foto_url' atau 'foto'
+      foto_url,
     });
 
     const saved = await this.fasilitasRepo.save(fasilitas);

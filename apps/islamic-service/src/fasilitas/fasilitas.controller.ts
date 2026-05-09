@@ -6,10 +6,30 @@ import {
   Body,
   Headers,
   ParseUUIDPipe,
+  ParseFilePipe,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { FasilitasService } from './fasilitas.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { success } from '../common/helpers/response.helper';
+import { memoryStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
+
+const dokumenUpload = FileInterceptor('dokumen', {
+  storage: memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.match(/\/(pdf|jpg|jpeg|png)$/)) {
+      return cb(
+        new BadRequestException('Hanya file PDF dan gambar yang diperbolehkan'),
+        false,
+      );
+    }
+    cb(null, true);
+  },
+});
 
 @Controller('islamic/fasilitas')
 export class FasilitasController {
@@ -34,12 +54,19 @@ export class FasilitasController {
   }
 
   @Post(':id/booking')
+  @UseInterceptors(dokumenUpload)
   async booking(
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-user-nik') userNik: string,
     @Body() dto: CreateBookingDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true,
+      }),
+    )
+    file: Express.Multer.File,
   ) {
-    const data = await this.fasilitasService.booking(id, userNik, dto);
+    const data = await this.fasilitasService.booking(id, userNik, dto, file);
     return success(data, 'Booking berhasil diajukan', 201);
   }
 }
