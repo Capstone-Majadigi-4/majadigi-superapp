@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Acara } from './entities/acara.entity';
@@ -7,11 +7,17 @@ import { PendaftaranAcara } from './entities/pendaftaran.entity';
 import { v4 as uuidv4 } from 'uuid';
 import type { Cache } from 'cache-manager';
 import { CreateAcaraDto, UpdateAcaraDto } from './dto/create-acara.dto';
+import * as path from 'node:path';
+import { MinioService } from '../common/minio/minio.service';
+import 'multer';
 
 const ACARA_CACHE_KEY = 'islamic:acara:all';
 const ACARA_TTL_MS = 60 * 1000;
+
 @Injectable()
 export class AcaraService {
+  private readonly logger = new Logger(AcaraService.name);
+
   constructor(
     @InjectRepository(Acara)
     private readonly acaraRepo: Repository<Acara>,
@@ -19,6 +25,7 @@ export class AcaraService {
     private readonly pendaftaranRepo: Repository<PendaftaranAcara>,
     private readonly dataSource: DataSource,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly minio: MinioService,
   ) {}
 
   async findAll(tanggal?: string, status?: string) {
@@ -112,20 +119,70 @@ export class AcaraService {
 
   // ADMIN
 
-  async create(dto: CreateAcaraDto, adminNik: string) {
-    const acara = this.acaraRepo.create({
-      ...dto,
-      dibuat_oleh: adminNik,
-      status: 'aktif',
-    });
-    const saved = await this.acaraRepo.save(acara);
-    await this.invalidateCache();
-    return saved;
+  async create(
+    dto: CreateAcaraDto,
+    adminNik: string,
+    file: Express.Multer.File,
+  ) {
+    let poster_url = dto.poster_url;
+
+    if (file) {
+      this.logger.log(`Uploading poster: ${file.originalname} (${file.mimetype})`);
+      try {
+        const ext = path.extname(file.originalname);
+        const filename = `acara/poster-${uuidv4()}${ext}`;
+        poster_url = await this.minio.uploadFile(filename, file.buffer, file.mimetype);
+        this.logger.log(`Poster uploaded: ${poster_url}`);
+      } catch (err) {
+        const e = err as Error;
+        this.logger.error(`MinIO upload gagal: ${e.message}`, e.stack);
+        throw err;
+      }
+    }
+
+    try {
+      const acara = this.acaraRepo.create({
+        ...dto,
+        poster_url,
+        dibuat_oleh: adminNik,
+        status: 'aktif',
+      });
+      const saved = await this.acaraRepo.save(acara);
+      this.logger.log(`Acara dibuat: ${saved.id}`);
+      await this.invalidateCache();
+      return saved;
+    } catch (err) {
+      const e = err as Error;
+      this.logger.error(`Gagal simpan acara: ${e.message}`, e.stack);
+      throw err;
+    }
   }
 
-  async update(id: string, dto: UpdateAcaraDto) {
+  async update(id: string, dto: UpdateAcaraDto, file?: Express.Multer.File) {
     const acara = await this.acaraRepo.findOne({ where: { id } });
     if (!acara) throw new NotFoundException('Acara tidak ditemukan');
+
+    if (file) {
+      if (acara.poster_url) {
+        const oldFilename = acara.poster_url.split(`/majadigi/`)[1];
+        if (oldFilename)
+          await this.minio.deleteFile(oldFilename).catch((err: Error) =>
+            this.logger.warn(`Gagal hapus poster lama: ${err.message}`),
+          );
+      }
+      this.logger.log(`Uploading poster baru: ${file.originalname}`);
+      try {
+        const ext = path.extname(file.originalname);
+        const filename = `acara/poster-${uuidv4()}${ext}`;
+        dto.poster_url = await this.minio.uploadFile(filename, file.buffer, file.mimetype);
+        this.logger.log(`Poster diupdate: ${dto.poster_url}`);
+      } catch (err) {
+        const e = err as Error;
+        this.logger.error(`MinIO upload gagal: ${e.message}`, e.stack);
+        throw err;
+      }
+    }
+
     Object.assign(acara, dto);
     const saved = await this.acaraRepo.save(acara);
     await this.invalidateCache();

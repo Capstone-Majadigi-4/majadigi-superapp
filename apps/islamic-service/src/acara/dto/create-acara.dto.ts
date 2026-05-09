@@ -6,37 +6,40 @@ import {
   IsIn,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateAcaraDto {
   @IsString()
   judul!: string;
 
-  @IsOptional()
+
   @IsString()
   deskripsi?: string;
 
   @IsDateString()
   tanggal!: string;
 
-  @IsOptional()
+
   @IsString()
   waktu_mulai?: string;
 
-  @IsOptional()
+
   @IsString()
   waktu_selesai?: string;
 
-  @IsOptional()
+
   @IsString()
   lokasi?: string;
 
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number.parseInt(value, 10))
   kuota_maksimal!: number;
+
 
   @IsOptional()
   @IsString()
-  poster_url?: string;
+  poster_url!: string;
 }
 
 export class UpdateAcaraDto {
@@ -67,11 +70,12 @@ export class UpdateAcaraDto {
   @IsOptional()
   @IsInt()
   @Min(1)
+  @Transform(({ value }) => Number.parseInt(value, 10))
   kuota_maksimal?: number;
 
   @IsOptional()
   @IsString()
-  poster_url?: string;
+  poster_url!: string;
 
   @IsOptional()
   @IsIn(['aktif', 'selesai', 'dibatalkan'])
