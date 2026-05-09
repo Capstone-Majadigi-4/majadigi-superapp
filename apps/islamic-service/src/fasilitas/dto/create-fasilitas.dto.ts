@@ -1,24 +1,29 @@
-import { IsString, IsInt, IsOptional, Min } from 'class-validator';
+
+import { Transform } from 'class-transformer';
+import { IsString, IsInt, IsOptional, Min, IsNumber, IsNotEmpty } from 'class-validator';
 
 export class CreateFasilitasDto {
   @IsString()
+  @IsNotEmpty()
   nama!: string;
 
-  @IsOptional()
   @IsInt()
   @Min(1)
-  kapasitas?: number;
+  @Transform(({ value }) => Number.parseInt(value, 10))
+  @IsNotEmpty()
+  kapasitas!: number;
 
-  @IsOptional()
-  @IsInt()
+  @IsNumber()
   @Min(0)
-  harga_per_hari?: number;
+  @Transform(({ value }) => Number(value))
+  @IsNotEmpty()
+  harga_per_hari!: number;
+
+  @IsString()
+  @IsNotEmpty()
+  deskripsi!: string;
 
   @IsOptional()
   @IsString()
-  deskripsi?: string;
-
-  @IsOptional()
-  @IsString()
-  foto_url?: string;
+  foto_url!: string;
 }

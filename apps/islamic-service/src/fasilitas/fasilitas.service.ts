@@ -14,6 +14,8 @@ import { BookingFasilitas } from './entities/booking.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateFasilitasDto } from './dto/create-fasilitas.dto';
 import { TolakBookingDto } from './dto/tolak-booking.dto';
+import { MinioService } from '../common/minio/minio.service';
+import path from 'path/win32';
 
 const FASILITAS_CACHE_KEY = 'islamic:fasilitas:all';
 const FASILITAS_TTL_MS = 5 * 60 * 1000;
@@ -27,6 +29,7 @@ export class FasilitasService {
     private readonly bookingRepo: Repository<BookingFasilitas>,
     private readonly dataSource: DataSource,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
+    private readonly minio: MinioService,
   ) {}
 
   async findAll() {
@@ -130,8 +133,25 @@ export class FasilitasService {
   }
 
   // admin
-  async createFasilitas(dto: CreateFasilitasDto) {
-    const fasilitas = this.fasilitasRepo.create(dto);
+  async createFasilitas(dto: CreateFasilitasDto, file: Express.Multer.File) {
+    let foto_url = '';
+
+    if (file) {
+      const ext = path.extname(file.originalname);
+      const filename = `fasilitas/foto-${uuidv4()}${ext}`;
+      foto_url = await this.minio.uploadFile(
+        filename,
+        file.buffer,
+        file.mimetype,
+      );
+    }
+
+    // Gabungkan dto dengan URL gambar yang baru di-upload
+    const fasilitas = this.fasilitasRepo.create({
+      ...dto,
+      foto_url, // Sesuaikan dengan nama kolom di entity kamu, misal 'foto_url' atau 'foto'
+    });
+
     const saved = await this.fasilitasRepo.save(fasilitas);
     await this.cache.del(FASILITAS_CACHE_KEY);
     return saved;

@@ -9,12 +9,32 @@ import {
   ParseUUIDPipe,
   Query,
   UseGuards,
+  ParseFilePipe,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { FasilitasService } from './fasilitas.service';
 import { CreateFasilitasDto } from './dto/create-fasilitas.dto';
 import { TolakBookingDto } from './dto/tolak-booking.dto';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { success } from '../common/helpers/response.helper';
+import { memoryStorage } from 'multer';
+import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
+
+const fotoUpload = FileInterceptor('foto', {
+  storage: memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // Maks 5MB
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {
+      return cb(
+        new BadRequestException('Hanya file gambar yang diperbolehkan'),
+        false,
+      );
+    }
+    cb(null, true);
+  },
+});
 
 @Controller('islamic/admin')
 @UseGuards(AdminGuard)
@@ -22,8 +42,17 @@ export class FasilitasAdminController {
   constructor(private readonly fasilitasService: FasilitasService) {}
 
   @Post('fasilitas')
-  async createFasilitas(@Body() dto: CreateFasilitasDto) {
-    const data = await this.fasilitasService.createFasilitas(dto);
+  @UseInterceptors(fotoUpload) // Gunakan interceptor di sini
+  async createFasilitas(
+    @Body() dto: CreateFasilitasDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: true, // Wajib upload gambar
+      }),
+    )
+    file: Express.Multer.File,
+  ) {
+    const data = await this.fasilitasService.createFasilitas(dto, file);
     return success(data, 'Fasilitas berhasil ditambahkan', 201);
   }
 
