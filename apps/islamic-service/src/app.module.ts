@@ -6,6 +6,7 @@ import { createKeyv } from '@keyv/redis';
 import { AcaraModule } from './acara/acara.module';
 import { FasilitasModule } from './fasilitas/fasilitas.module';
 import { SeederModule } from './database/seeder.module';
+import { MinioModule } from './common/minio/minio.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SeederModule } from './database/seeder.module';
     SeederModule,
     AcaraModule,
     FasilitasModule,
+    MinioModule
   ],
 })
 export class AppModule {}
