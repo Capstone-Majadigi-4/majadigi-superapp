@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
 
@@ -16,16 +17,28 @@ var fcmScopes = []string{"https://www.googleapis.com/auth/firebase.messaging"}
 
 type Client struct {
 	projectID   string
-	credentials []byte
+	tokenSource oauth2.TokenSource
 	http        *http.Client
 }
 
+// NewClient membuat FCM client baru. credentialsJSON adalah konten service account JSON.
+// Mengembalikan nil-safe client yang mengabaikan Send jika konfigurasi tidak lengkap.
 func NewClient(projectID, credentialsJSON string) *Client {
-	return &Client{
-		projectID:   projectID,
-		credentials: []byte(credentialsJSON),
-		http:        &http.Client{},
+	c := &Client{
+		projectID: projectID,
+		http:      &http.Client{},
 	}
+	if projectID != "" && credentialsJSON != "" {
+		creds, err := google.CredentialsFromJSON(
+			context.Background(),
+			[]byte(credentialsJSON),
+			fcmScopes...,
+		)
+		if err == nil {
+			c.tokenSource = creds.TokenSource
+		}
+	}
+	return c
 }
 
 type fcmNotification struct {
@@ -44,16 +57,11 @@ type fcmPayload struct {
 }
 
 func (c *Client) Send(ctx context.Context, token, title, body string, data map[string]string) error {
-	if c.projectID == "" || len(c.credentials) == 0 || token == "" {
+	if c.tokenSource == nil || token == "" {
 		return nil
 	}
 
-	creds, err := google.CredentialsFromJSON(ctx, c.credentials, fcmScopes...)
-	if err != nil {
-		return fmt.Errorf("fcm: parse credentials: %w", err)
-	}
-
-	oauthToken, err := creds.TokenSource.Token()
+	oauthToken, err := c.tokenSource.Token()
 	if err != nil {
 		return fmt.Errorf("fcm: get token: %w", err)
 	}
