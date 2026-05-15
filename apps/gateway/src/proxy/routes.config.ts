@@ -86,7 +86,9 @@ export const FORCE_AUTH_PATHS = [
   '/api/v1/sinaker/lowongan',
   '/api/v1/sinaker/lamaran',
   '/api/v1/transjatim/tiket',
-  '/api/v1/wisata', 
+  '/api/v1/wisata',
   '/api/v1/bansos/status-saya',
   '/api/v1/rsud/antrean',
+  '/api/v1/islamic/fasilitas', 
+  '/api/v1/islamic/acara',
 ];
