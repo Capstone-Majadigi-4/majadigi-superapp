@@ -21,7 +21,7 @@ export class NotificationModule implements OnModuleInit {
       credential: admin.credential.cert({
         projectId,
         clientEmail: this.config.get<string>('FCM_CLIENT_EMAIL'),
-        privateKey: this.config.get<string>('FCM_PRIVATE_KEY')?.replace(/\\n/g, '\n'),
+        privateKey: this.config.get<string>('FCM_PRIVATE_KEY')?.replaceAll(/\\n/g, '\n'),
       }),
     });
   }

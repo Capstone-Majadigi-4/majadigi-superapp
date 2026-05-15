@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -64,13 +64,16 @@ export class AntreanService {
       const saved = await queryRunner.manager.save(Antrean, antrean);
       await queryRunner.commitTransaction();
 
-      const result = await this.antreanRepo.findOne({
-        where: { id: saved.id },
-        relations: ['poli', 'dokter'],
-      });
+   const result = await this.antreanRepo.findOne({
+     where: { id: saved.id },
+     relations: ['poli', 'dokter'],
+   });
 
-      this.antreanGateway.broadcastAntreanBaru(dto.poli_id, result!);
-      return result;
+   if (!result)
+     throw new InternalServerErrorException('Gagal memuat data antrean');
+
+   this.antreanGateway.broadcastAntreanBaru(dto.poli_id, result);
+   return result;
     } catch (err) {
       await queryRunner.rollbackTransaction();
       throw err;
@@ -126,8 +129,13 @@ export class AntreanService {
         relations: ['poli', 'dokter'],
       });
 
+      if (!updated)
+        throw new InternalServerErrorException(
+          'Gagal memuat pembaruan antrean',
+        );
+
       await this.cache.del(antreanStatusKey(antrean.id));
-      this.antreanGateway.broadcastDipanggil(poliId, updated!);
+      this.antreanGateway.broadcastDipanggil(poliId, updated);
       return updated;
     } catch (err) {
       await queryRunner.rollbackTransaction();
