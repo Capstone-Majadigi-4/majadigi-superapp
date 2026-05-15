@@ -403,7 +403,7 @@ CREATE TABLE "sinaker"."lamaran" (
   "created_at" timestamp DEFAULT (now())
 );
 
-CREATE TABLE "transjatim"."koridor" (
+CREATE TABLE IF NOT EXISTS "transjatim"."koridor" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "kode" varchar(20) UNIQUE NOT NULL,
   "nama" varchar(255) NOT NULL,
@@ -412,7 +412,7 @@ CREATE TABLE "transjatim"."koridor" (
   "is_active" boolean DEFAULT true
 );
 
-CREATE TABLE "transjatim"."halte" (
+CREATE TABLE IF NOT EXISTS "transjatim"."halte" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "koridor_id" uuid NOT NULL,
   "nama" varchar(200) NOT NULL,
@@ -421,7 +421,7 @@ CREATE TABLE "transjatim"."halte" (
   "lng" decimal(10,7)
 );
 
-CREATE TABLE "transjatim"."armada" (
+CREATE TABLE IF NOT EXISTS "transjatim"."armada" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "koridor_id" uuid,
   "kode_bus" varchar(20) UNIQUE,
@@ -432,7 +432,7 @@ CREATE TABLE "transjatim"."armada" (
   "updated_at" timestamp DEFAULT (now())
 );
 
-CREATE TABLE "transjatim"."tiket" (
+CREATE TABLE IF NOT EXISTS "transjatim"."tiket" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "user_nik" varchar(16) NOT NULL,
   "koridor_id" uuid NOT NULL,
