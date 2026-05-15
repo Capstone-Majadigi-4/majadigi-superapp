@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>RSUD Live Queue Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+        }
+
+        #queue {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 100px;
+        }
+
+        .called {
+            color: red;
+            font-weight: bold;
+        }
+
+        .log {
+            color: #666;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h3>Live Queue — Poli: <span id="poli-id"></span></h3>
+
+    <label>Poli ID: <input id="input-poli" placeholder="uuid poli" style="width:350px" /></label>
+    <button onclick="connect()">Connect</button>
+
+    <h4>Antrean Menunggu:</h4>
+    <div id="queue">Belum terhubung...</div>
+
+    <h4>Log Event:</h4>
+    <div id="event-log" class="log"></div>
+
+   <script 
+    src="https://cdn.socket.io/4.7.5/socket.io.min.js" 
+    integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" 
+    crossorigin="anonymous"
+></script>
+    <script>
+        let socket;
+
+        window.onload = () => {
+            const params = new URLSearchParams(globalThis.location.search);
+            const poliId = params.get('poli_id');
+            if (poliId) {
+                document.getElementById('input-poli').value = poliId;
+                connect();
+            }
+        };
+
+        function addLog(msg) {
+            const el = document.getElementById('event-log');
+            el.innerHTML = new Date().toLocaleTimeString() + ' ' + msg + '<br>' + el.innerHTML;
+        }
+
+        function renderQueue(antrean) {
+            const el = document.getElementById('queue');
+            if (antrean.length === 0) {
+                el.innerHTML = '<i>Tidak ada antrean menunggu</i>';
+                return;
+            }
+            el.innerHTML = antrean.map(a =>
+                `<div id="row-${a.nomor_antrean}">[${a.nomor_antrean}] ${a.dokter ?? '-'} — est. ${a.estimasi_jam}</div>`
+            ).join('');
+        }
+
+        function connect() {
+            const poliId = document.getElementById('input-poli').value.trim();
+            if (!poliId) return alert('Isi Poli ID dulu');
+            if (socket) socket.disconnect();
+
+            document.getElementById('poli-id').textContent = poliId;
+
+            socket = io('http://localhost:3005', {
+                path: '/api/v1/rsud/antrean/live',
+                query: { poli_id: poliId }
+            });
+
+            socket.on('connect', () => addLog('Connected: ' + socket.id));
+            socket.on('disconnect', () => addLog('Disconnected'));
+
+            socket.on('QUEUE_STATE', (data) => {
+                addLog('QUEUE_STATE — ' + data.antrean.length + ' antrean');
+                renderQueue(data.antrean);
+            });
+
+            socket.on('ANTREAN_BARU', (data) => {
+                addLog('ANTREAN_BARU: ' + data.nomor_antrean);
+                const el = document.getElementById('queue');
+                const isEmpty = el.querySelector('i');
+                if (isEmpty) el.innerHTML = '';
+                el.innerHTML += `<div id="row-${data.nomor_antrean}">[${data.nomor_antrean}] ${data.dokter ?? '-'} — est. ${data.estimasi_jam}</div>`;
+            });
+
+            socket.on('ANTREAN_DIPANGGIL', (data) => {
+                addLog('DIPANGGIL: ' + data.nomor_dipanggil);
+                const item = document.getElementById('row-' + data.nomor_dipanggil);
+                if (item) {
+                    item.className = 'called';
+                    item.textContent += ' ← DIPANGGIL';
+                    setTimeout(() => item.remove(), 3000);
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>
