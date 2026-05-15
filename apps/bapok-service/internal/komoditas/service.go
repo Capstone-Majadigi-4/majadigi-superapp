@@ -42,7 +42,7 @@ func (s *Service) FindAll(ctx context.Context) ([]Komoditas, error) {
 		s.rdb.Set(ctx, cacheKey, b, cacheTTL)
 	}
 
-	return result, nil
+	return result, nil 
 }
 
 func (s *Service) FindById(ctx context.Context, id string) (*Komoditas, error) {
