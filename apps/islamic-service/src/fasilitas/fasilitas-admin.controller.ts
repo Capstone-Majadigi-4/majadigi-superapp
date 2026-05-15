@@ -23,7 +23,7 @@ import { memoryStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 
 const fotoUpload = FileInterceptor('foto', {
-  storage: memoryStorage(),
+  storage: memoryStorage(), // NOSONAR typescript:S5693
   limits: { fileSize: 5 * 1024 * 1024 }, // Maks 5MB
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.match(/\/(jpg|jpeg|png|webp)$/)) {

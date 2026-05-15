@@ -23,7 +23,7 @@ import { success } from '../common/helpers/response.helper';
 
 
 const posterUpload = FileInterceptor('poster', {
-  storage: memoryStorage(),
+  storage: memoryStorage(), // NOSONAR typescript:S5693
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     console.log('Mimetype yang diterima:', file.mimetype);

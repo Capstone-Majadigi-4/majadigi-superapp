@@ -18,7 +18,7 @@ import { memoryStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express/multer/interceptors/file.interceptor';
 
 const dokumenUpload = FileInterceptor('dokumen', {
-  storage: memoryStorage(),
+  storage: memoryStorage(), // NOSONAR typescript:S5693
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.match(/\/(pdf|jpg|jpeg|png)$/)) {
