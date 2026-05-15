@@ -15,7 +15,7 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateFasilitasDto } from './dto/create-fasilitas.dto';
 import { TolakBookingDto } from './dto/tolak-booking.dto';
 import { MinioService } from '../common/minio/minio.service';
-import path from 'node:path/win32';
+import path from 'node:path';
 
 const FASILITAS_CACHE_KEY = 'islamic:fasilitas:all';
 const FASILITAS_TTL_MS = 5 * 60 * 1000;
