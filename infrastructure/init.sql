@@ -481,7 +481,11 @@ CREATE INDEX ON "bapok"."harga_harian" ("tanggal");
 
 CREATE INDEX ON "bapok"."harga_harian" ("komoditas_id");
 
+CREATE INDEX ON "bapok"."harga_harian" ("komoditas_id", "tanggal");
+
 CREATE INDEX ON "bapok"."price_alert" ("user_nik");
+
+CREATE INDEX ON "bapok"."price_alert" ("komoditas_id");
 
 CREATE UNIQUE INDEX ON "bapok"."price_alert" ("user_nik", "komoditas_id", "tipe");
 
@@ -613,7 +617,7 @@ COMMENT ON TABLE "bapok"."price_alert" IS 'Dicek oleh cron job periodik via Redi
 
 COMMENT ON COLUMN "bapok"."price_alert"."user_nik" IS 'FK logis ke auth.users.nik';
 
-COMMENT ON COLUMN "bapok"."price_alert"."tipe" IS 'batas_atas | batas_bawah';
+COMMENT ON COLUMN "bapok"."price_alert"."tipe" IS 'naik_diatas | turun_dibawah';
 
 COMMENT ON COLUMN "islamic"."fasilitas"."nama" IS 'Aula Utama, Masjid Al-Akbar, dll';
 
