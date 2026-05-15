@@ -60,6 +60,21 @@ services:
     networks:
       - majadigi-network
 
+  minio:
+    image: minio/minio:latest
+    container_name: majadigi-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    env_file:
+      - ../.env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASSWORD}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
   # --- BACKAND SERVICES ---
   gateway:
     image: node:20-alpine
@@ -108,6 +123,7 @@ services:
 volumes:
   pgdata:
   redisdata:
+  miniodata:
 
 networks:
   majadigi-network:
