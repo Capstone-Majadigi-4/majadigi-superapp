@@ -75,6 +75,9 @@ services:
       - "9001:9001"
     volumes:
       - miniodata:/data
+    networks:
+      - majadigi-network
+
   # --- BACKAND SERVICES ---
   gateway:
     image: node:20-alpine
