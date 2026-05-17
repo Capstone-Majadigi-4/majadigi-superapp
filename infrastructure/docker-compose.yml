@@ -75,6 +75,9 @@ services:
       - "9001:9001"
     volumes:
       - miniodata:/data
+    networks:
+      - majadigi-network
+
   # --- BACKAND SERVICES ---
   gateway:
     image: node:20-alpine
@@ -115,6 +118,51 @@ services:
     command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
     ports:
       - "3006:3006"
+    env_file:
+      - ../.env
+    networks:
+      - majadigi-network
+
+  bapok-service:
+    image: golang:alpine
+    container_name: majadigi-bapok
+    working_dir: /usr/src/app
+    volumes:
+      - ../apps/bapok-service:/usr/src/app
+    command: sh -c "go run cmd/api/main.go" 
+    ports:
+      - "${BAPOK_SERVICE_PORT:-3003}:${BAPOK_SERVICE_PORT:-3003}"
+    environment:
+      - PORT=${BAPOK_SERVICE_PORT}
+      - DB_PASS=${DB_PASSWORD}
+    env_file:
+      - ../.env
+    networks:
+      - majadigi-network
+
+  islamic-service:
+    image: node:20-alpine
+    container_name: majadigi-islamic
+    working_dir: /usr/src/app
+    volumes:
+      - ../apps/islamic-service:/usr/src/app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
+    ports:
+      - "${ISLAMIC_SERVICE_PORT:-3004}:${ISLAMIC_SERVICE_PORT:-3004}"
+    env_file:
+      - ../.env
+    networks:
+      - majadigi-network
+
+  rsud-service:
+    image: node:20-alpine
+    container_name: majadigi-rsud
+    working_dir: /usr/src/app
+    volumes:
+      - ../apps/rsud-service:/usr/src/app
+    command: sh -c "npm install -g pnpm && pnpm install && pnpm run start:dev"
+    ports:
+      - "3005:3005"
     env_file:
       - ../.env
     networks:
