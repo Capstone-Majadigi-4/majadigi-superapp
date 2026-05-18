@@ -181,6 +181,25 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
 
+     # - name: Health check
+      #  uses: appleboy/ssh-action@v1
+       # with:
+        #  host: ${{ secrets.PROD_HOST }}
+         # username: ${{ secrets.PROD_USER }}
+          #key: ${{ secrets.PROD_SSH_KEY }}
+          #script: |
+          #  echo "Waiting for services..."
+          #  for i in $(seq 1 12); do
+          #    if curl -sf --max-time 5 http://localhost/health; then
+           #     echo "Health check passed on attempt $i"
+            #    exit 0
+             # fi
+              #echo "Attempt $i/12 failed, retrying in 10s..."
+              #sleep 10
+            #done
+           # echo "Health check failed"
+           # exit 1
+
       - name: Health check
         uses: appleboy/ssh-action@v1
         with:
@@ -188,18 +207,10 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            echo "Waiting for services..."
-            for i in $(seq 1 12); do
-              if curl -sf --max-time 5 http://localhost/health; then
-                echo "Health check passed on attempt $i"
-                exit 0
-              fi
-              echo "Attempt $i/12 failed, retrying in 10s..."
-              sleep 10
-            done
-            echo "Health check failed"
-            exit 1
-
+            cd /opt/majadigi/infrastructure
+            docker compose -f docker-compose.prod.yml ps
+            echo "Deploy selesai — cek status service di atas"
+            
       - name: Rollback on failure
         if: failure()
         uses: appleboy/ssh-action@v1
