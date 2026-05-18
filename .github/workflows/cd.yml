@@ -1,20 +1,22 @@
 name: CD — Deploy to Production
 
 on:
-  push:
-    branches:
-      - chore/setup-infra
-  pull_request:
-    branches:
-      - main 
-    types:
-      - closed
+    workflow_run:
+        workflows: ["CI"]
+    push:
+        branches:
+        - chore/setup-infra
+    pull_request:
+        branches:
+        - main
+        types:
+        - closed
 
 jobs:
   guard:
     name: Check merged
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true || github.event_name == 'push'
+    if: github.event.pull_request.merged == true
     steps:
       - run: echo "PR merged — starting deployment"
 
@@ -97,7 +99,7 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            cd /opt/majadigi
+            cd /opt/majadigi/infrastructure
             grep IMAGE_TAG .env 2>/dev/null | cut -d= -f2 > .last_stable_tag || echo "latest" > .last_stable_tag
             echo "Saved stable tag: $(cat .last_stable_tag)"
 
@@ -110,9 +112,9 @@ jobs:
           envs: TAG
           script: |
             set -e
-            cd /opt/majadigi
+            cd /opt/majadigi/infrastructure
 
-            # Update image tag
+            # Update image tag di .env
             sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env || echo "IMAGE_TAG=$TAG" >> .env
 
             # Pull image terbaru dari Docker Hub
@@ -151,7 +153,7 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            cd /opt/majadigi
+            cd /opt/majadigi/infrastructure
             PREV_TAG=$(cat .last_stable_tag 2>/dev/null || echo "latest")
             echo "Rolling back to: $PREV_TAG"
             sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$PREV_TAG/" .env

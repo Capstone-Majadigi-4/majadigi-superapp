@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches:
-      - dev
       - chore/setup-infra
   pull_request:
     branches:
@@ -17,20 +16,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
- 
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
- 
-      - name: Install dependencies
-        run: npm ci
- 
-      # - name: Run tests
-      #   run: npm test
-        
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: |
+            apps/gateway/pnpm-lock.yaml
+            apps/auth-service/pnpm-lock.yaml
+            apps/transjatim-service/pnpm-lock.yaml
+
+      - name: Install gateway dependencies
+        working-directory: apps/gateway
+        run: pnpm install --frozen-lockfile
+
+      - name: Install auth-service dependencies
+        working-directory: apps/auth-service
+        run: pnpm install --frozen-lockfile
+
+      - name: Install transjatim-service dependencies
+        working-directory: apps/transjatim-service
+        run: pnpm install --frozen-lockfile
+
+      - name: Test gateway
+        working-directory: apps/gateway
+        run: pnpm test --passWithNoTests
+
+      - name: Test auth-service
+        working-directory: apps/auth-service
+        run: pnpm test --passWithNoTests
+
+      - name: Test transjatim-service
+        working-directory: apps/transjatim-service
+        run: pnpm test --passWithNoTests
+
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -39,5 +65,5 @@ jobs:
           args: >
             -Dsonar.organization=capstone-majadigi-4
             -Dsonar.projectKey=Capstone-Majadigi-4_majadigi-superapp
-            -Dsonar.sources=.
-            -Dsonar.exclusions=node_modules/**,coverage/**
+            -Dsonar.sources=apps
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**
