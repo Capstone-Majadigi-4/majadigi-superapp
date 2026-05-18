@@ -1,28 +1,93 @@
-name: CD — Deploy to Production
+name: CI/CD
 
 on:
-    workflow_run:
-        workflows: ["CI"]
-    push:
-        branches:
-        - chore/setup-infra
-    pull_request:
-        branches:
-        - main
-        types:
-        - closed
+  push:
+    branches:
+      - dev
+      - chore/setup-infra
+  pull_request:
+    branches:
+      - dev
+    types:
+      - opened
+      - synchronize
+
 
 jobs:
-  guard:
-    name: Check merged
+  # ============================================================
+  # CI — Jalan saat push/PR ke dev dan push ke chore/setup-infra
+  # ============================================================
+  test:
+    name: Test & SonarQube
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'dev')
     steps:
-      - run: echo "PR merged — starting deployment"
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: |
+            apps/gateway/pnpm-lock.yaml
+            apps/auth-service/pnpm-lock.yaml
+            apps/transjatim-service/pnpm-lock.yaml
+
+      - name: Install gateway dependencies
+        working-directory: apps/gateway
+        run: pnpm install --frozen-lockfile
+
+      - name: Install auth-service dependencies
+        working-directory: apps/auth-service
+        run: pnpm install --frozen-lockfile
+
+      - name: Install transjatim-service dependencies
+        working-directory: apps/transjatim-service
+        run: pnpm install --frozen-lockfile
+
+      - name: Test gateway
+        working-directory: apps/gateway
+        run: pnpm test --passWithNoTests
+
+      - name: Test auth-service
+        working-directory: apps/auth-service
+        run: pnpm test --passWithNoTests
+
+      - name: Test transjatim-service
+        working-directory: apps/transjatim-service
+        run: pnpm test --passWithNoTests
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=capstone-majadigi-4
+            -Dsonar.projectKey=Capstone-Majadigi-4_majadigi-superapp
+            -Dsonar.sources=apps
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**
+
+  # ============================================================
+  # CD — Build & Push
+  # Jalan saat push ke chore/setup-infra ATAU merge PR ke main
+  # ============================================================
   prepare:
     name: Prepare
     runs-on: ubuntu-latest
-    needs: guard
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/chore/setup-infra') ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.merged == true)
     outputs:
       image_tag: ${{ steps.tag.outputs.tag }}
     steps:
@@ -56,7 +121,6 @@ jobs:
           - service: rsud-service
             context: apps/rsud-service
             image: majadigi-rsud-service
-
     steps:
       - uses: actions/checkout@v4
 
@@ -112,17 +176,9 @@ jobs:
           script: |
             set -e
             cd /opt/majadigi/infrastructure
-
-            # Update image tag di .env
             sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env || echo "IMAGE_TAG=$TAG" >> .env
-
-            # Pull image terbaru dari Docker Hub
             docker compose -f docker-compose.prod.yml pull
-
-            # Jalankan semua service
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-
-            # Bersihkan image lama
             docker image prune -f
 
       - name: Health check
