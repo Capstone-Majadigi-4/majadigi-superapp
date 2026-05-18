@@ -47,15 +47,15 @@ jobs:
      
       - name: Test gateway
         working-directory: apps/gateway
-        run: pnpm test -- --passWithNoTests
+        run: pnpm test --passWithNoTests
 
       - name: Test auth-service
         working-directory: apps/auth-service
-        run: pnpm test -- --passWithNoTests
+        run: pnpm test --passWithNoTests
 
       - name: Test transjatim-service
         working-directory: apps/transjatim-service
-        run: pnpm test -- --passWithNoTests
+        run: pnpm test --passWithNoTests
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
