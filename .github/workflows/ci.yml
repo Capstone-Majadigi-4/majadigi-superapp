@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev
+      - chore/setup-infra
   pull_request:
     branches:
       - dev
