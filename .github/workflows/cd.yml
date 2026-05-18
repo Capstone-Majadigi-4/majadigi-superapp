@@ -16,7 +16,6 @@ jobs:
   guard:
     name: Check merged
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
     steps:
       - run: echo "PR merged — starting deployment"
 
