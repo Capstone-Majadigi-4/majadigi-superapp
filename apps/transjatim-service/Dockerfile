@@ -14,9 +14,11 @@ RUN pnpm build
 
 FROM base AS runner
 ENV NODE_ENV=production
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package.json ./
+USER appuser
 
-EXPOSE 3001
+EXPOSE 3006
 CMD ["node", "dist/main"]

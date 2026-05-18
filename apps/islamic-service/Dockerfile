@@ -8,14 +8,17 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY src ./src
+COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 RUN pnpm build
 
 FROM base AS runner
 ENV NODE_ENV=production
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package.json ./
+USER appuser
 
-EXPOSE 3006
+EXPOSE 3004
 CMD ["node", "dist/main"]
