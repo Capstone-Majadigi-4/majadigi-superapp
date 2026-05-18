@@ -34,15 +34,15 @@ jobs:
 
       - name: Install gateway dependencies
         working-directory: apps/gateway
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install auth-service dependencies
         working-directory: apps/auth-service
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install transjatim-service dependencies
         working-directory: apps/transjatim-service
-        run: pnpm install
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
      
       - name: Test gateway
