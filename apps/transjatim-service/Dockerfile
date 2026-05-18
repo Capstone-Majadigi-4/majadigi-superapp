@@ -18,5 +18,5 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY package.json ./
 
-EXPOSE 3006
+EXPOSE 3011
 CMD ["node", "dist/main"]
