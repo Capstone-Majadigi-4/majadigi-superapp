@@ -10,7 +10,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const port = process.env.PORT ?? 3006;
+  const port = process.env.PORT ?? 3004;
   await app.listen(port);
   console.log(`Islamic Service running on port ${port}`);
 }
