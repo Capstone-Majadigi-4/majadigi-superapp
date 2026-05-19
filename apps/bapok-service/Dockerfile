@@ -11,4 +11,4 @@ WORKDIR /app
 COPY --from=builder /app/server .
 
 EXPOSE 3003
-CMD ["./server"]
+CMD ["./main"]
