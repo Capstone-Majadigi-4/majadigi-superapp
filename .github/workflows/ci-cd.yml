@@ -202,7 +202,7 @@ jobs:
             sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env || echo "IMAGE_TAG=$TAG" >> .env
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
-            docker image prune -f
+            docker image prune -f || true
 
       - name: Health check
         uses: appleboy/ssh-action@v1
