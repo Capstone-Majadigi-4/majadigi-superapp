@@ -90,7 +90,7 @@ jobs:
     name: Prepare
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/chore/setup-infra') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/chore/setup-infra' || github.ref == 'refs/heads/dev')) ||
       (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.merged == true) ||
       (github.event_name == 'pull_request' && github.base_ref == 'dev' && github.event.pull_request.merged == true)
     outputs:
