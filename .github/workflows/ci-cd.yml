@@ -121,6 +121,24 @@ jobs:
           - service: rsud-service
             context: apps/rsud-service
             image: majadigi-rsud-service
+          - service: bapenda-service
+            context: apps/bapenda-service
+            image: majadigi-bapenda-service
+          - service: emergency-service
+            context: apps/emergency-service
+            image: majadigi-emergency-service
+          - service: tourism-service
+            context: apps/tourism-service
+            image: majadigi-tourism-service
+          - service: bansos-service
+            context: apps/bansos-service-v2
+            image: majadigi-bansos-service
+          - service: etibi-service
+            context: apps/etibi-service
+            image: majadigi-etibi-service
+          - service: sinaker-service
+            context: apps/sinaker-service
+            image: majadigi-sinaker-service
     steps:
       - uses: actions/checkout@v4
 

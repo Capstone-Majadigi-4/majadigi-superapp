@@ -136,6 +136,84 @@ services:
     networks:
       - majadigi-network
 
+  bapenda-service:
+    image: ${DOCKERHUB_USERNAME}/majadigi-bapenda-service:${IMAGE_TAG:-latest}
+    container_name: majadigi-bapenda
+    restart: always
+    env_file: .env
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - majadigi-network
+
+  emergency-service:
+    image: ${DOCKERHUB_USERNAME}/majadigi-emergency-service:${IMAGE_TAG:-latest}
+    container_name: majadigi-emergency
+    restart: always
+    env_file: .env
+    ports:
+      - "3006:3006"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - majadigi-network
+
+  tourism-service:
+    image: ${DOCKERHUB_USERNAME}/majadigi-tourism-service:${IMAGE_TAG:-latest}
+    container_name: majadigi-tourism
+    restart: always
+    env_file: .env
+    ports:
+      - "3007:3007"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - majadigi-network
+
+  bansos-service:
+    image: ${DOCKERHUB_USERNAME}/majadigi-bansos-service:${IMAGE_TAG:-latest}
+    container_name: majadigi-bansos
+    restart: always
+    env_file: .env
+    ports:
+      - "3008:3008"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - majadigi-network
+
+  etibi-service:
+    image: ${DOCKERHUB_USERNAME}/majadigi-etibi-service:${IMAGE_TAG:-latest}
+    container_name: majadigi-etibi
+    restart: always
+    env_file: .env
+    ports:
+      - "3009:3009"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - majadigi-network
+
+  sinaker-service:
+    image: ${DOCKERHUB_USERNAME}/majadigi-sinaker-service:${IMAGE_TAG:-latest}
+    container_name: majadigi-sinaker
+    restart: always
+    env_file: .env
+    ports:
+      - "3010:3010"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    networks:
+      - majadigi-network
+
 volumes:
   pgdata:
   redisdata:
