@@ -40,6 +40,7 @@ export class ProxyModule implements NestModule {
           createProxyMiddleware({
             target: route.target,
             changeOrigin: true,
+            ws: true,
            onError: (err, req, res) => {
             console.error(`[PROXY ERROR] Gagal akses ${req.url}: ${err.message}`);
               const response = res as import('node:http').ServerResponse;
