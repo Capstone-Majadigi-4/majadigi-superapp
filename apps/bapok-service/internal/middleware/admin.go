@@ -8,7 +8,7 @@ import (
 
 func AdminGuard(adminKey string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		key := c.Get("x-admin-key")
+		key := c.Get("X-Admin-Secret")
 		if key == "" || key != adminKey {
 			return common.Error(c, "Akses admin tidak diizinkan", 401)
 		}
