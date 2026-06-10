@@ -77,11 +77,23 @@ func (r *Repository) FindById(ctx context.Context, id string) (*Komoditas, error
 	var k Komoditas
 
 	err := r.db.QueryRow(ctx,
-		`SELECT id, nama, kategori, satuan, ikon_url, is_active, created_at
-		 FROM bapok.komoditas WHERE id = $1`,
+		`SELECT
+			k.id, k.nama, k.kategori, k.satuan, k.ikon_url, k.is_active, k.created_at,
+			CAST(AVG(h.harga) AS BIGINT) AS harga_rata_rata,
+			MIN(h.harga)                  AS harga_terendah,
+			MAX(h.harga)                  AS harga_tertinggi,
+			MAX(h.tanggal::text)          AS tanggal_harga
+		 FROM bapok.komoditas k
+		 LEFT JOIN bapok.harga_harian h ON h.komoditas_id = k.id AND h.tanggal = CURRENT_DATE
+		 WHERE k.id = $1
+		 GROUP BY k.id, k.nama, k.kategori, k.satuan, k.ikon_url, k.is_active, k.created_at`,
 		id,
-	).Scan(&k.ID, &k.Nama, &k.Kategori, &k.Satuan, &k.IkonURL, &k.IsActive, &k.CreatedAt)
+	).Scan(&k.ID, &k.Nama, &k.Kategori, &k.Satuan, &k.IkonURL, &k.IsActive, &k.CreatedAt,
+		&k.HargaRataRata, &k.HargaTerendah, &k.HargaTertinggi, &k.TanggalHarga)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 

@@ -38,11 +38,13 @@ func (s *Service) FindAll(ctx context.Context) ([]Komoditas, error) {
 		return nil, err
 	}
 
-	if b, err := json.Marshal(result); err == nil {
-		s.rdb.Set(ctx, cacheKey, b, cacheTTL)
+	if len(result) > 0 {
+		if b, err := json.Marshal(result); err == nil {
+			s.rdb.Set(ctx, cacheKey, b, cacheTTL)
+		}
 	}
 
-	return result, nil 
+	return result, nil
 }
 
 func (s *Service) FindById(ctx context.Context, id string) (*Komoditas, error) {

@@ -12,7 +12,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const cacheTTL = 5 * time.Minute
+const (
+	cacheTTL              = 5 * time.Minute
+	cacheKeyPerbandingan  = "bapok:perbandingan:%s"
+)
 
 type Service struct {
 	repo *Repository
@@ -174,6 +177,111 @@ func (s *Service) checkAlerts(ctx context.Context, komoditasID string, hargaBaru
 			s.sendAlertNotification(ctx, a.UserNik, a.Tipe, komoditasID, hargaBaru)
 		}
 	}
+}
+
+func (s *Service) FindKoperasiAll(ctx context.Context) ([]Koperasi, error) {
+	return s.repo.FindKoperasiAll(ctx)
+}
+
+func (s *Service) FindHargaKoperasi(ctx context.Context, tanggal, koperasiID string) ([]HargaKoperasiDetail, error) {
+	key := fmt.Sprintf("bapok:harga_koperasi:%s:%s", tanggal, koperasiID)
+
+	cached, err := s.rdb.Get(ctx, key).Bytes()
+	if err == nil {
+		var result []HargaKoperasiDetail
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return result, nil
+		}
+	}
+
+	result, err := s.repo.FindHargaKoperasiByTanggal(ctx, tanggal, koperasiID)
+	if err != nil {
+		return nil, err
+	}
+
+	if b, err := json.Marshal(result); err == nil {
+		s.rdb.Set(ctx, key, b, cacheTTL)
+	}
+
+	return result, nil
+}
+
+func (s *Service) FindPerbandingan(ctx context.Context, tanggal string) ([]HargaPerbandingan, error) {
+	key := fmt.Sprintf(cacheKeyPerbandingan, tanggal)
+
+	cached, err := s.rdb.Get(ctx, key).Bytes()
+	if err == nil {
+		var result []HargaPerbandingan
+		if err := json.Unmarshal(cached, &result); err == nil {
+			return result, nil
+		}
+	}
+
+	result, err := s.repo.FindHargaPerbandingan(ctx, tanggal)
+	if err != nil {
+		return nil, err
+	}
+
+	if b, err := json.Marshal(result); err == nil {
+		s.rdb.Set(ctx, key, b, cacheTTL)
+	}
+
+	return result, nil
+}
+
+func (s *Service) CreateHargaKoperasi(ctx context.Context, req CreateHargaKoperasiRequest) (*HargaKoperasi, error) {
+	result, err := s.repo.CreateHargaKoperasi(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	s.scanAndDelete(ctx, fmt.Sprintf("bapok:harga_koperasi:%s:*", req.Tanggal))
+	s.rdb.Del(ctx, fmt.Sprintf(cacheKeyPerbandingan, req.Tanggal))
+
+	return result, nil
+}
+
+func (s *Service) BulkCSVKoperasi(ctx context.Context, rows []BulkCSVRowKoperasi, inputOleh string) (*BulkCSVResult, error) {
+	komoditasMap, err := s.repo.LoadKomoditasMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+	koperasiMap, err := s.repo.LoadKoperasiMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &BulkCSVResult{Total: len(rows)}
+
+	for i, row := range rows {
+		lineNum := i + 2
+
+		komoditasID, ok := komoditasMap[row.NamaKomoditas]
+		if !ok {
+			result.Gagal++
+			result.Errors = append(result.Errors, fmt.Sprintf("baris %d: komoditas '%s' tidak ditemukan", lineNum, row.NamaKomoditas))
+			continue
+		}
+
+		koperasiID, ok := koperasiMap[row.NamaKoperasi]
+		if !ok {
+			result.Gagal++
+			result.Errors = append(result.Errors, fmt.Sprintf("baris %d: koperasi '%s' tidak ditemukan", lineNum, row.NamaKoperasi))
+			continue
+		}
+
+		if err := s.repo.UpsertHargaKoperasi(ctx, komoditasID, koperasiID, row.Harga, row.Tanggal, inputOleh); err != nil {
+			result.Gagal++
+			result.Errors = append(result.Errors, fmt.Sprintf("baris %d: gagal simpan (%v)", lineNum, err))
+			continue
+		}
+
+		result.Sukses++
+		s.scanAndDelete(ctx, fmt.Sprintf("bapok:harga_koperasi:%s:*", row.Tanggal))
+		s.rdb.Del(ctx, fmt.Sprintf(cacheKeyPerbandingan, row.Tanggal))
+	}
+
+	return result, nil
 }
 
 func (s *Service) sendAlertNotification(ctx context.Context, userNik, tipe, komoditasID string, harga int64) {

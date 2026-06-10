@@ -65,9 +65,14 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	// ticker
 	api.Get("/ticker", tickerHandler.FindTicker)
 
-	// harga
+	// harga pasar
 	api.Get("/harga", hargaHandler.FindHarga)
+	api.Get("/harga/koperasi", hargaHandler.FindHargaKoperasi)
+	api.Get("/harga/perbandingan", hargaHandler.FindPerbandingan)
 	api.Get("/harga/:komoditas_id/histori", hargaHandler.FindHistori)
+
+	// koperasi
+	api.Get("/koperasi", hargaHandler.FindKoperasiAll)
 
 	// alert
 	api.Get("/alert/saya", alertHandler.FindByUser)
@@ -81,6 +86,8 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	admin.Delete("/komoditas/:id", komoditasHandler.Delete)
 	admin.Post("/harga", hargaHandler.Create)
 	admin.Post("/harga/bulk-csv", hargaHandler.BulkCSV)
+	admin.Post("/harga-koperasi", hargaHandler.CreateHargaKoperasi)
+	admin.Post("/harga-koperasi/bulk-csv", hargaHandler.BulkCSVKoperasi)
 
 	return &Server{app: app, cfg: cfg}
 }
