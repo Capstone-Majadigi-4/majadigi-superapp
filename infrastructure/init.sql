@@ -110,6 +110,23 @@ CREATE TABLE "bapok"."harga_harian" (
   "created_at" timestamp DEFAULT (now())
 );
 
+CREATE TABLE "bapok"."koperasi" (
+  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "nama" varchar(150) NOT NULL,
+  "kota" varchar(100),
+  "is_active" boolean DEFAULT true
+);
+
+CREATE TABLE "bapok"."harga_koperasi" (
+  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "komoditas_id" uuid NOT NULL,
+  "koperasi_id" uuid NOT NULL,
+  "harga" bigint NOT NULL,
+  "tanggal" date NOT NULL,
+  "input_oleh" varchar(16),
+  "created_at" timestamp DEFAULT (now())
+);
+
 CREATE TABLE "bapok"."price_alert" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "user_nik" varchar(16) NOT NULL,
@@ -483,6 +500,14 @@ CREATE INDEX ON "bapok"."harga_harian" ("komoditas_id");
 
 CREATE INDEX ON "bapok"."harga_harian" ("komoditas_id", "tanggal");
 
+CREATE UNIQUE INDEX ON "bapok"."harga_koperasi" ("komoditas_id", "koperasi_id", "tanggal");
+
+CREATE INDEX ON "bapok"."harga_koperasi" ("tanggal");
+
+CREATE INDEX ON "bapok"."harga_koperasi" ("komoditas_id");
+
+CREATE INDEX ON "bapok"."harga_koperasi" ("komoditas_id", "tanggal");
+
 CREATE INDEX ON "bapok"."price_alert" ("user_nik");
 
 CREATE INDEX ON "bapok"."price_alert" ("komoditas_id");
@@ -612,6 +637,12 @@ COMMENT ON COLUMN "bapok"."komoditas"."satuan" IS 'kg | liter | butir';
 COMMENT ON TABLE "bapok"."harga_harian" IS 'Satu record = satu harga komoditas di satu pasar pada satu hari.';
 
 COMMENT ON COLUMN "bapok"."harga_harian"."input_oleh" IS 'NIK admin Disperindag';
+
+COMMENT ON TABLE "bapok"."koperasi" IS 'Cabang Koperasi Merah Putih sebagai sumber harga koperasi.';
+
+COMMENT ON TABLE "bapok"."harga_koperasi" IS 'Satu record = satu harga komoditas di satu koperasi pada satu hari.';
+
+COMMENT ON COLUMN "bapok"."harga_koperasi"."input_oleh" IS 'NIK admin Koperasi';
 
 COMMENT ON TABLE "bapok"."price_alert" IS 'Dicek oleh cron job periodik via Redis queue.';
 
@@ -754,6 +785,10 @@ ALTER TABLE "bapenda"."transaksi_pembayaran" ADD FOREIGN KEY ("tagihan_id") REFE
 ALTER TABLE "bapok"."harga_harian" ADD FOREIGN KEY ("komoditas_id") REFERENCES "bapok"."komoditas" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "bapok"."harga_harian" ADD FOREIGN KEY ("pasar_id") REFERENCES "bapok"."pasar" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "bapok"."harga_koperasi" ADD FOREIGN KEY ("komoditas_id") REFERENCES "bapok"."komoditas" ("id") DEFERRABLE INITIALLY IMMEDIATE;
+
+ALTER TABLE "bapok"."harga_koperasi" ADD FOREIGN KEY ("koperasi_id") REFERENCES "bapok"."koperasi" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "bapok"."price_alert" ADD FOREIGN KEY ("komoditas_id") REFERENCES "bapok"."komoditas" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 

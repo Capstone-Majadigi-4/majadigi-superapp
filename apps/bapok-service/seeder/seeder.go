@@ -8,11 +8,34 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// komoditasSeedData menyimpan semua data referensi komoditas dalam satu tempat
+// agar tidak ada duplikasi string literal di fungsi seed lainnya.
+type komoditasSeedData struct {
+	nama, kategori, satuan string
+	hargaPasar             int64
+	hargaKoperasi          int64 // ~10% lebih murah, simulasi subsidi koperasi
+}
+
+var komoditasSeed = []komoditasSeedData{
+	{"Beras Medium", "Pokok", "kg", 13000, 11700},
+	{"Cabai Merah Keriting", "Sayuran", "kg", 45000, 40500},
+	{"Bawang Merah", "Sayuran", "kg", 32000, 28800},
+	{"Bawang Putih", "Sayuran", "kg", 28000, 25200},
+	{"Minyak Goreng", "Pokok", "liter", 18000, 16200},
+	{"Gula Pasir", "Pokok", "kg", 17000, 15300},
+	{"Tepung Terigu", "Pokok", "kg", 12000, 10800},
+	{"Daging Ayam", "Protein", "kg", 35000, 31500},
+	{"Daging Sapi", "Protein", "kg", 130000, 117000},
+	{"Telur Ayam", "Protein", "kg", 28000, 25200},
+}
+
 func Run(db *pgxpool.Pool) {
 	ctx := context.Background()
 	seedKomoditas(ctx, db)
 	seedPasar(ctx, db)
+	seedKoperasi(ctx, db)
 	seedHarga(ctx, db)
+	seedHargaKoperasi(ctx, db)
 }
 
 func seedKomoditas(ctx context.Context, db *pgxpool.Pool) {
@@ -22,20 +45,7 @@ func seedKomoditas(ctx context.Context, db *pgxpool.Pool) {
 		return
 	}
 
-	komoditas := []struct{ nama, kategori, satuan string }{
-		{"Beras Medium", "Pokok", "kg"},
-		{"Cabai Merah Keriting", "Sayuran", "kg"},
-		{"Bawang Merah", "Sayuran", "kg"},
-		{"Bawang Putih", "Sayuran", "kg"},
-		{"Minyak Goreng", "Pokok", "liter"},
-		{"Gula Pasir", "Pokok", "kg"},
-		{"Tepung Terigu", "Pokok", "kg"},
-		{"Daging Ayam", "Protein", "kg"},
-		{"Daging Sapi", "Protein", "kg"},
-		{"Telur Ayam", "Protein", "kg"},
-	}
-
-	for _, k := range komoditas {
+	for _, k := range komoditasSeed {
 		db.Exec(ctx,
 			`INSERT INTO bapok.komoditas (nama, kategori, satuan) VALUES ($1, $2, $3)`,
 			k.nama, k.kategori, k.satuan,
@@ -70,6 +80,29 @@ func seedPasar(ctx context.Context, db *pgxpool.Pool) {
 	log.Println("Seeded: pasar")
 }
 
+func seedKoperasi(ctx context.Context, db *pgxpool.Pool) {
+	var count int
+	db.QueryRow(ctx, `SELECT COUNT(1) FROM bapok.koperasi`).Scan(&count)
+	if count > 0 {
+		return
+	}
+
+	koperasi := []struct{ nama, kota string }{
+		{"Koperasi Merah Putih Klojen", "Malang"},
+		{"Koperasi Merah Putih Blimbing", "Malang"},
+		{"Koperasi Merah Putih Lowokwaru", "Malang"},
+		{"Koperasi Merah Putih Sukun", "Malang"},
+	}
+
+	for _, k := range koperasi {
+		db.Exec(ctx,
+			`INSERT INTO bapok.koperasi (nama, kota) VALUES ($1, $2)`,
+			k.nama, k.kota,
+		)
+	}
+	log.Println("Seeded: koperasi")
+}
+
 func seedHarga(ctx context.Context, db *pgxpool.Pool) {
 	var count int
 	db.QueryRow(ctx, `SELECT COUNT(1) FROM bapok.harga_harian WHERE tanggal = CURRENT_DATE`).Scan(&count)
@@ -77,39 +110,15 @@ func seedHarga(ctx context.Context, db *pgxpool.Pool) {
 		return
 	}
 
-	// harga dasar per komoditas (nama -> harga_dasar dalam rupiah)
-	hargaDasar := map[string]int64{
-		"Beras Medium":         13000,
-		"Cabai Merah Keriting": 45000,
-		"Bawang Merah":         32000,
-		"Bawang Putih":         28000,
-		"Minyak Goreng":        18000,
-		"Gula Pasir":           17000,
-		"Tepung Terigu":        12000,
-		"Daging Ayam":          35000,
-		"Daging Sapi":          130000,
-		"Telur Ayam":           28000,
-	}
-
-	// variasi harga per pasar (index 0-3 = 4 pasar)
+	hargaDasar := buildHargaMap(false)
 	variasiPasar := []int64{0, 500, -500, 1000}
 
-	// ambil semua komoditas
-	komoditasRows, err := db.Query(ctx, `SELECT id, nama FROM bapok.komoditas`)
+	komoditasList, err := queryKomoditasItems(ctx, db)
 	if err != nil {
 		log.Printf("seedHarga: gagal query komoditas: %v", err)
 		return
 	}
-	defer komoditasRows.Close()
 
-	var komoditasList []komoditasItem
-	for komoditasRows.Next() {
-		var k komoditasItem
-		komoditasRows.Scan(&k.id, &k.nama)
-		komoditasList = append(komoditasList, k)
-	}
-
-	// ambil semua pasar
 	pasarRows, err := db.Query(ctx, `SELECT id FROM bapok.pasar ORDER BY nama`)
 	if err != nil {
 		log.Printf("seedHarga: gagal query pasar: %v", err)
@@ -126,17 +135,86 @@ func seedHarga(ctx context.Context, db *pgxpool.Pool) {
 
 	today := time.Now()
 	inserted := 0
-	cfg := hargaSeedConfig{
-		komoditasList: komoditasList,
-		pasarIDs:      pasarIDs,
-		hargaDasar:    hargaDasar,
-		variasiPasar:  variasiPasar,
-	}
 	for i := range 7 {
 		tanggal := today.AddDate(0, 0, -i).Format("2006-01-02")
-		inserted += insertHargaPerTanggal(ctx, db, cfg, tanggal, int64(i)*200)
+		dayOffset := int64(i) * 200
+		for _, k := range komoditasList {
+			dasar := hargaDasar[k.nama]
+			for pi, pasarID := range pasarIDs {
+				harga := max(dasar+variasiPasar[pi%len(variasiPasar)]-dayOffset, 1000)
+				db.Exec(ctx,
+					`INSERT INTO bapok.harga_harian (komoditas_id, pasar_id, harga, tanggal) VALUES ($1, $2, $3, $4)`,
+					k.id, pasarID, harga, tanggal,
+				)
+				inserted++
+			}
+		}
 	}
 	log.Printf("Seeded: harga (%d rows)", inserted)
+}
+
+func seedHargaKoperasi(ctx context.Context, db *pgxpool.Pool) {
+	var count int
+	db.QueryRow(ctx, `SELECT COUNT(1) FROM bapok.harga_koperasi WHERE tanggal = CURRENT_DATE`).Scan(&count)
+	if count > 0 {
+		return
+	}
+
+	hargaDasar := buildHargaMap(true)
+	variasiKoperasi := []int64{0, 300, -300, 600}
+
+	komoditasList, err := queryKomoditasItems(ctx, db)
+	if err != nil {
+		log.Printf("seedHargaKoperasi: gagal query komoditas: %v", err)
+		return
+	}
+
+	koperasiRows, err := db.Query(ctx, `SELECT id FROM bapok.koperasi ORDER BY nama`)
+	if err != nil {
+		log.Printf("seedHargaKoperasi: gagal query koperasi: %v", err)
+		return
+	}
+	defer koperasiRows.Close()
+
+	var koperasiIDs []string
+	for koperasiRows.Next() {
+		var id string
+		koperasiRows.Scan(&id)
+		koperasiIDs = append(koperasiIDs, id)
+	}
+
+	today := time.Now()
+	inserted := 0
+	for i := range 7 {
+		tanggal := today.AddDate(0, 0, -i).Format("2006-01-02")
+		dayOffset := int64(i) * 180
+		for _, k := range komoditasList {
+			dasar := hargaDasar[k.nama]
+			for ki, koperasiID := range koperasiIDs {
+				harga := max(dasar+variasiKoperasi[ki%len(variasiKoperasi)]-dayOffset, 1000)
+				db.Exec(ctx,
+					`INSERT INTO bapok.harga_koperasi (komoditas_id, koperasi_id, harga, tanggal) VALUES ($1, $2, $3, $4)`,
+					k.id, koperasiID, harga, tanggal,
+				)
+				inserted++
+			}
+		}
+	}
+	log.Printf("Seeded: harga_koperasi (%d rows)", inserted)
+}
+
+// buildHargaMap membangun map nama→harga dari komoditasSeed.
+// Jika koperasi=true, gunakan hargaKoperasi; sebaliknya hargaPasar.
+func buildHargaMap(koperasi bool) map[string]int64 {
+	m := make(map[string]int64, len(komoditasSeed))
+	for _, k := range komoditasSeed {
+		if koperasi {
+			m[k.nama] = k.hargaKoperasi
+		} else {
+			m[k.nama] = k.hargaPasar
+		}
+	}
+	return m
 }
 
 type komoditasItem struct {
@@ -144,28 +222,18 @@ type komoditasItem struct {
 	nama string
 }
 
-type hargaSeedConfig struct {
-	komoditasList []komoditasItem
-	pasarIDs      []string
-	hargaDasar    map[string]int64
-	variasiPasar  []int64
-}
-
-func insertHargaPerTanggal(ctx context.Context, db *pgxpool.Pool, cfg hargaSeedConfig, tanggal string, dayOffset int64) int {
-	count := 0
-	for _, k := range cfg.komoditasList {
-		dasar, ok := cfg.hargaDasar[k.nama]
-		if !ok {
-			dasar = 10000
-		}
-		for pi, pasarID := range cfg.pasarIDs {
-			harga := max(dasar+cfg.variasiPasar[pi%len(cfg.variasiPasar)]-dayOffset, 1000)
-			db.Exec(ctx,
-				`INSERT INTO bapok.harga_harian (komoditas_id, pasar_id, harga, tanggal) VALUES ($1, $2, $3, $4)`,
-				k.id, pasarID, harga, tanggal,
-			)
-			count++
-		}
+func queryKomoditasItems(ctx context.Context, db *pgxpool.Pool) ([]komoditasItem, error) {
+	rows, err := db.Query(ctx, `SELECT id, nama FROM bapok.komoditas`)
+	if err != nil {
+		return nil, err
 	}
-	return count
+	defer rows.Close()
+
+	var list []komoditasItem
+	for rows.Next() {
+		var k komoditasItem
+		rows.Scan(&k.id, &k.nama)
+		list = append(list, k)
+	}
+	return list, nil
 }
