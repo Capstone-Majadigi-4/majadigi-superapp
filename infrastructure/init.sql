@@ -81,6 +81,19 @@ CREATE TABLE "bapenda"."transaksi_pembayaran" (
   "created_at" timestamp DEFAULT (now())
 );
 
+CREATE TABLE "bapenda"."kendaraan_njkb" (
+  "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
+  "jenis_kendaraan" varchar(50) NOT NULL,
+  "merk" varchar(100) NOT NULL,
+  "model" varchar(100) NOT NULL,
+  "tipe" varchar(100) NOT NULL,
+  "tahun" integer NOT NULL,
+  "njkb" bigint NOT NULL,
+  "created_at" timestamptz DEFAULT (now()),
+  "updated_at" timestamptz DEFAULT (now())
+);
+
+
 CREATE TABLE "bapok"."komoditas" (
   "id" uuid PRIMARY KEY DEFAULT (gen_random_uuid()),
   "nama" varchar(150) NOT NULL,

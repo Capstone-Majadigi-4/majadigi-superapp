@@ -1,8 +1,4 @@
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 import { OneToMany } from 'typeorm';
 import { TagihanPajak } from './tagihan-pajak.entity';
 
@@ -28,9 +24,6 @@ export class Kendaraan {
 
   @Column()
   warna: string;
-  @OneToMany(
-    () => TagihanPajak,
-    (tagihan) => tagihan.kendaraan,
-  )
+  @OneToMany(() => TagihanPajak, (tagihan) => tagihan.kendaraan)
   tagihan: TagihanPajak[];
 }

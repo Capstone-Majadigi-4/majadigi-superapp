@@ -1,84 +1,54 @@
-import { Injectable }
-from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { InjectRepository }
-from '@nestjs/typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
-import { Repository }
-from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { TagihanPajak }
-from '../entities/tagihan-pajak.entity';
+import { TagihanPajak } from '../entities/tagihan-pajak.entity';
 
-import { TransaksiPembayaran }
-from '../entities/transaksi-pembayaran.entity';
+import { TransaksiPembayaran } from '../entities/transaksi-pembayaran.entity';
 
-import { ResponseHelper }
-from '../../../common/helpers/response.helper';
+import { ResponseHelper } from '../../../common/helpers/response.helper';
 
 @Injectable()
 export class PembayaranService {
   constructor(
-    @InjectRepository(
-      TagihanPajak,
-    )
-    private readonly tagihanPajakRepository:
-      Repository<TagihanPajak>,
+    @InjectRepository(TagihanPajak)
+    private readonly tagihanPajakRepository: Repository<TagihanPajak>,
 
-    @InjectRepository(
-      TransaksiPembayaran,
-    )
-    private readonly transaksiPembayaranRepository:
-      Repository<TransaksiPembayaran>,
+    @InjectRepository(TransaksiPembayaran)
+    private readonly transaksiPembayaranRepository: Repository<TransaksiPembayaran>,
   ) {}
 
-  async bayarTagihan(
-    nopol: string,
-    nik: string,
-    metode: string,
-  ) {
-    const tagihan =
-      await this.tagihanPajakRepository.findOne({
-        where: {
-          kendaraan: {
-            nopol,
-            nik_pemilik:
-              nik,
-          },
+  async bayarTagihan(nopol: string, nik: string, metode: string) {
+    const tagihan = await this.tagihanPajakRepository.findOne({
+      where: {
+        kendaraan: {
+          nopol,
+          nik_pemilik: nik,
         },
+      },
 
-        relations: [
-          'kendaraan',
-        ],
-      });
+      relations: ['kendaraan'],
+    });
 
     if (!tagihan) {
-      return ResponseHelper.error(
-        'Tagihan tidak ditemukan',
-        'NOT_FOUND',
-        404,
-      );
+      return ResponseHelper.error('Tagihan tidak ditemukan', 'NOT_FOUND', 404);
     }
 
-    const existingPayment =
-      await this.transaksiPembayaranRepository.findOne({
-        where: {
-          tagihan: {
-            id: tagihan.id,
-          },
-
-          status:
-            'pending',
+    const existingPayment = await this.transaksiPembayaranRepository.findOne({
+      where: {
+        tagihan: {
+          id: tagihan.id,
         },
 
-        relations: [
-          'tagihan',
-        ],
-      });
+        status: 'pending',
+      },
 
-    if (
-      existingPayment
-    ) {
+      relations: ['tagihan'],
+    });
+
+    if (existingPayment) {
       return ResponseHelper.error(
         'Masih ada pembayaran pending untuk tagihan ini',
         'PAYMENT_ALREADY_EXISTS',
@@ -86,87 +56,53 @@ export class PembayaranService {
       );
     }
 
-    const kodeBayar =
-      `VA-${Date.now()}`;
+    const kodeBayar = `VA-${Date.now()}`;
 
-    const expiredAt =
-      new Date();
+    const expiredAt = new Date();
 
-    expiredAt.setHours(
-      expiredAt.getHours() +
-        24,
-    );
+    expiredAt.setHours(expiredAt.getHours() + 24);
 
-    const pembayaran =
-      this.transaksiPembayaranRepository.create(
-        {
-          kode_bayar:
-            kodeBayar,
+    const pembayaran = this.transaksiPembayaranRepository.create({
+      kode_bayar: kodeBayar,
 
-          metode,
+      metode,
 
-          bank_code:
-            'BCA',
+      bank_code: 'BCA',
 
-          total:
-            tagihan.total,
+      total: tagihan.total,
 
-          status:
-            'pending',
+      status: 'pending',
 
-          pg_reference: `PG-${Date.now()}`,
+      pg_reference: `PG-${Date.now()}`,
 
-          expired_at:
-            expiredAt,
+      expired_at: expiredAt,
 
-          tagihan,
-        },
-      );
+      tagihan,
+    });
 
-    await this.transaksiPembayaranRepository.save(
-      pembayaran,
-    );
+    await this.transaksiPembayaranRepository.save(pembayaran);
 
-    return ResponseHelper.success(
-      'Pembayaran berhasil dibuat',
-      {
-        kode_bayar:
-          pembayaran.kode_bayar,
+    return ResponseHelper.success('Pembayaran berhasil dibuat', {
+      kode_bayar: pembayaran.kode_bayar,
 
-        metode:
-          pembayaran.metode,
+      metode: pembayaran.metode,
 
-        total:
-          pembayaran.total,
+      total: pembayaran.total,
 
-        status:
-          pembayaran.status,
+      status: pembayaran.status,
 
-        expired_at:
-          pembayaran.expired_at
-            .toISOString()
-            .split(
-              'T',
-            )[0],
-      },
-    );
+      expired_at: pembayaran.expired_at.toISOString().split('T')[0],
+    });
   }
 
-  async paymentWebhook(
-    kodeBayar: string,
-    status: string,
-  ) {
-    const pembayaran =
-      await this.transaksiPembayaranRepository.findOne({
-        where: {
-          kode_bayar:
-            kodeBayar,
-        },
+  async paymentWebhook(kodeBayar: string, status: string) {
+    const pembayaran = await this.transaksiPembayaranRepository.findOne({
+      where: {
+        kode_bayar: kodeBayar,
+      },
 
-        relations: [
-          'tagihan',
-        ],
-      });
+      relations: ['tagihan'],
+    });
 
     if (!pembayaran) {
       return ResponseHelper.error(
@@ -176,10 +112,7 @@ export class PembayaranService {
       );
     }
 
-    if (
-      pembayaran.status ===
-      'paid'
-    ) {
+    if (pembayaran.status === 'paid') {
       return ResponseHelper.error(
         'Pembayaran sudah pernah dikonfirmasi',
         'PAYMENT_ALREADY_PAID',
@@ -187,45 +120,26 @@ export class PembayaranService {
       );
     }
 
-    pembayaran.status =
-      status;
+    pembayaran.status = status;
 
-    await this.transaksiPembayaranRepository.save(
-      pembayaran,
-    );
+    await this.transaksiPembayaranRepository.save(pembayaran);
 
-    if (
-      status === 'paid'
-    ) {
-      pembayaran.tagihan.status =
-        'lunas';
+    if (status === 'paid') {
+      pembayaran.tagihan.status = 'lunas';
 
-      await this.tagihanPajakRepository.save(
-        pembayaran.tagihan,
-      );
+      await this.tagihanPajakRepository.save(pembayaran.tagihan);
     }
 
-    return ResponseHelper.success(
-      'Status pembayaran berhasil diperbarui',
-      {
-        kode_bayar:
-          pembayaran.kode_bayar,
+    return ResponseHelper.success('Status pembayaran berhasil diperbarui', {
+      kode_bayar: pembayaran.kode_bayar,
 
-        status_pembayaran:
-          pembayaran.status,
+      status_pembayaran: pembayaran.status,
 
-        status_tagihan:
-          pembayaran.tagihan
-            .status,
-      },
-    );
+      status_tagihan: pembayaran.tagihan.status,
+    });
   }
 
-  async getRiwayatPembayaran(
-    nik: string,
-    page = 1,
-    limit = 10,
-  ) {
+  async getRiwayatPembayaran(nik: string, page = 1, limit = 10) {
     if (page < 1) {
       page = 1;
     }
@@ -238,79 +152,50 @@ export class PembayaranService {
       limit = 50;
     }
 
-    const [
-      pembayaran,
-      total,
-    ] =
+    const [pembayaran, total] =
       await this.transaksiPembayaranRepository.findAndCount({
         where: {
           tagihan: {
             kendaraan: {
-              nik_pemilik:
-                nik,
+              nik_pemilik: nik,
             },
           },
         },
 
-        relations: [
-          'tagihan',
-          'tagihan.kendaraan',
-        ],
+        relations: ['tagihan', 'tagihan.kendaraan'],
 
         order: {
-          expired_at:
-            'DESC',
+          expired_at: 'DESC',
         },
 
-        skip:
-          (page - 1) * limit,
+        skip: (page - 1) * limit,
 
-        take:
-          limit,
+        take: limit,
       });
 
-    const result =
-      pembayaran.map(
-        (item) => ({
-          kode_bayar:
-            item.kode_bayar,
+    const result = pembayaran.map((item) => ({
+      kode_bayar: item.kode_bayar,
 
-          metode:
-            item.metode,
+      metode: item.metode,
 
-          total:
-            item.total,
+      total: item.total,
 
-          status:
-            item.status,
+      status: item.status,
 
-          expired_at:
-            item.expired_at
-              .toISOString()
-              .split(
-                'T',
-              )[0],
+      expired_at: item.expired_at.toISOString().split('T')[0],
 
-          kendaraan: {
-            nopol:
-              item.tagihan
-                .kendaraan
-                .nopol,
+      kendaraan: {
+        nopol: item.tagihan.kendaraan.nopol,
 
-            merk_tipe: `${item.tagihan.kendaraan.merk} ${item.tagihan.kendaraan.tipe}`,
-          },
+        merk_tipe: `${item.tagihan.kendaraan.merk} ${item.tagihan.kendaraan.tipe}`,
+      },
 
-          tagihan: {
-            periode:
-              item.tagihan
-                .periode,
+      tagihan: {
+        periode: item.tagihan.periode,
 
-            status:
-              item.tagihan
-                .status,
-          },
-        }),
-      );
+        status: item.tagihan.status,
+      },
+    }));
 
     return ResponseHelper.paginate(
       'Riwayat pembayaran berhasil diambil',
@@ -322,10 +207,7 @@ export class PembayaranService {
         limit,
         total,
 
-        totalPages:
-          Math.ceil(
-            total / limit,
-          ),
+        totalPages: Math.ceil(total / limit),
       },
     );
   }

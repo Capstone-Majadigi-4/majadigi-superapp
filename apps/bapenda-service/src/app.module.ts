@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { BapendaModule } from './modules/bapenda/bapenda.module';
+import { SeederModule } from './database/seeder.module';
 
 @Module({
   imports: [
@@ -19,9 +20,12 @@ import { BapendaModule } from './modules/bapenda/bapenda.module';
       database: process.env.DB_DATABASE,
       autoLoadEntities: true,
       synchronize: false,
+      migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
+      migrationsRun: true,
     }),
 
     BapendaModule,
+    SeederModule,
   ],
 })
 export class AppModule {}
