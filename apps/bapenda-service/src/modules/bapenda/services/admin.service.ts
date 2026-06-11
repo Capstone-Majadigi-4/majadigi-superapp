@@ -1,29 +1,18 @@
-import { Injectable }
-from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
-import { InjectRepository }
-from '@nestjs/typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 
-import {
-  FindOptionsWhere,
-  ILike,
-  Repository,
-} from 'typeorm';
+import { FindOptionsWhere, ILike, Repository } from 'typeorm';
 
-import { TransaksiPembayaran }
-from '../entities/transaksi-pembayaran.entity';
+import { TransaksiPembayaran } from '../entities/transaksi-pembayaran.entity';
 
-import { ResponseHelper }
-from '../../../common/helpers/response.helper';
+import { ResponseHelper } from '../../../common/helpers/response.helper';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(
-      TransaksiPembayaran,
-    )
-    private readonly transaksiPembayaranRepository:
-      Repository<TransaksiPembayaran>,
+    @InjectRepository(TransaksiPembayaran)
+    private readonly transaksiPembayaranRepository: Repository<TransaksiPembayaran>,
   ) {}
 
   async getRekapTransaksi(
@@ -44,16 +33,11 @@ export class AdminService {
       limit = 50;
     }
 
-    const where:
-      FindOptionsWhere<TransaksiPembayaran>[] =
-      [];
+    const where: FindOptionsWhere<TransaksiPembayaran>[] = [];
 
     if (search) {
       where.push({
-        kode_bayar:
-          ILike(
-            `%${search}%`,
-          ),
+        kode_bayar: ILike(`%${search}%`),
 
         ...(status && {
           status,
@@ -63,10 +47,7 @@ export class AdminService {
       where.push({
         tagihan: {
           kendaraan: {
-            nopol:
-              ILike(
-                `%${search}%`,
-              ),
+            nopol: ILike(`%${search}%`),
           },
         },
 
@@ -82,60 +63,34 @@ export class AdminService {
       });
     }
 
-    const [
-      transaksi,
-      total,
-    ] =
-      await this.transaksiPembayaranRepository.findAndCount(
-        {
-          where,
+    const [transaksi, total] =
+      await this.transaksiPembayaranRepository.findAndCount({
+        where,
 
-          relations: [
-            'tagihan',
-            'tagihan.kendaraan',
-          ],
+        relations: ['tagihan', 'tagihan.kendaraan'],
 
-          order: {
-            expired_at:
-              'DESC',
-          },
-
-          skip:
-            (page - 1) * limit,
-
-          take:
-            limit,
+        order: {
+          expired_at: 'DESC',
         },
-      );
 
-    const result =
-      transaksi.map(
-        (item) => ({
-          kode_bayar:
-            item.kode_bayar,
+        skip: (page - 1) * limit,
 
-          nopol:
-            item.tagihan
-              .kendaraan
-              .nopol,
+        take: limit,
+      });
 
-          metode:
-            item.metode,
+    const result = transaksi.map((item) => ({
+      kode_bayar: item.kode_bayar,
 
-          total:
-            item.total,
+      nopol: item.tagihan.kendaraan.nopol,
 
-          status:
-            item.status,
+      metode: item.metode,
 
-          expired_at:
-            item.expired_at
-              ?.toISOString()
-              .split(
-                'T',
-              )[0],
-        }),
-      );
+      total: item.total,
+
+      status: item.status,
+
+      expired_at: item.expired_at?.toISOString().split('T')[0],
+    }));
 
     return ResponseHelper.paginate(
       'Data rekap transaksi berhasil diambil',
@@ -147,10 +102,7 @@ export class AdminService {
         limit,
         total,
 
-        totalPages:
-          Math.ceil(
-            total / limit,
-          ),
+        totalPages: Math.ceil(total / limit),
       },
     );
   }

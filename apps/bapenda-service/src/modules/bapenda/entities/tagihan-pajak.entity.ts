@@ -39,9 +39,6 @@ export class TagihanPajak {
   @JoinColumn({ name: 'kendaraan_id' })
   kendaraan: Kendaraan;
 
-  @OneToMany(
-  () => TransaksiPembayaran,
-  (pembayaran) => pembayaran.tagihan,
-)
-pembayaran: TransaksiPembayaran[];
+  @OneToMany(() => TransaksiPembayaran, (pembayaran) => pembayaran.tagihan)
+  pembayaran: TransaksiPembayaran[];
 }

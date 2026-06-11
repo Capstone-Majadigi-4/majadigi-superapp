@@ -9,73 +9,47 @@ import {
   UseGuards,
 } from '@nestjs/common';
 
-import { KendaraanService }
-from './services/kendaraan.service';
+import { KendaraanService } from './services/kendaraan.service';
 
-import { TagihanService }
-from './services/tagihan.service';
+import { TagihanService } from './services/tagihan.service';
 
-import { PembayaranService }
-from './services/pembayaran.service';
+import { PembayaranService } from './services/pembayaran.service';
 
-import { EtbpkbService }
-from './services/etbpkb.service';
+import { EtbpkbService } from './services/etbpkb.service';
 
-import { AdminService }
-from './services/admin.service';
+import { AdminService } from './services/admin.service';
 
-import { AdminGuard }
-from '../../common/guards/admin.guard';
+import { AdminGuard } from '../../common/guards/admin.guard';
+import { ResponseHelper } from '../../common/helpers/response.helper';
 
 @Controller('bapenda')
 export class BapendaController {
   constructor(
-    private readonly kendaraanService:
-      KendaraanService,
+    private readonly kendaraanService: KendaraanService,
 
-    private readonly tagihanService:
-      TagihanService,
+    private readonly tagihanService: TagihanService,
 
-    private readonly pembayaranService:
-      PembayaranService,
+    private readonly pembayaranService: PembayaranService,
 
-    private readonly etbpkbService:
-      EtbpkbService,
+    private readonly etbpkbService: EtbpkbService,
 
-    private readonly adminService:
-      AdminService,
+    private readonly adminService: AdminService,
   ) {}
 
   @Get('kendaraan')
   async getKendaraan(
     @Headers()
-    headers: Record<
-      string,
-      string
-    >,
+    headers: Record<string, string>,
   ) {
-    return this.kendaraanService
-      .getKendaraan(
-        headers[
-          'x-user-nik'
-        ],
-      );
+    return this.kendaraanService.getKendaraan(headers['x-user-nik']);
   }
 
   @Get('widget')
   async getWidget(
     @Headers()
-    headers: Record<
-      string,
-      string
-    >,
+    headers: Record<string, string>,
   ) {
-    return this.kendaraanService
-      .getWidget(
-        headers[
-          'x-user-nik'
-        ],
-      );
+    return this.kendaraanService.getWidget(headers['x-user-nik']);
   }
 
   @Get('tagihan/:nopol')
@@ -84,76 +58,59 @@ export class BapendaController {
     nopol: string,
 
     @Headers()
-    headers: Record<
-      string,
-      string
-    >,
+    headers: Record<string, string>,
   ) {
-    return this.tagihanService
-      .getTagihanByNopol(
-        nopol,
+    return this.tagihanService.getTagihanByNopol(
+      nopol,
 
-        headers[
-          'x-user-nik'
-        ],
-      );
+      headers['x-user-nik'],
+    );
   }
 
-  @Post(
-    'tagihan/:nopol/bayar',
-  )
+  @Post('tagihan/:nopol/bayar')
   async bayarTagihan(
     @Param('nopol')
     nopol: string,
 
     @Headers()
-    headers: Record<
-      string,
-      string
-    >,
+    headers: Record<string, string>,
 
     @Body()
     body: {
       metode: string;
     },
   ) {
-    return this.pembayaranService
-      .bayarTagihan(
-        nopol,
+    return this.pembayaranService.bayarTagihan(
+      nopol,
 
-        headers[
-          'x-user-nik'
-        ],
+      headers['x-user-nik'],
 
-        body.metode,
-      );
+      body.metode,
+    );
   }
 
-  @Post(
-    'webhook/payment',
-  )
+  @Post('webhook/payment')
   async paymentWebhook(
     @Body()
-    body: {
-      kode_bayar: string;
-
-      status: string;
+    body?: {
+      kode_bayar?: string;
+      status?: string;
     },
   ) {
-    return this.pembayaranService
-      .paymentWebhook(
-        body.kode_bayar,
-        body.status,
+    if (!body || !body.kode_bayar || !body.status) {
+      return ResponseHelper.error(
+        'Request body (kode_bayar, status) wajib diisi',
+        'BAD_REQUEST',
+        400,
       );
+    }
+    return this.pembayaranService.paymentWebhook(body.kode_bayar, body.status);
   }
 
   @Get('pembayaran')
   async getRiwayatPembayaran(
     @Headers()
-    headers: Record<
-      string,
-      string
-    >,
+    headers: Record<string, string>,
 
     @Query('page')
     page?: string,
@@ -161,16 +118,13 @@ export class BapendaController {
     @Query('limit')
     limit?: string,
   ) {
-    return this.pembayaranService
-      .getRiwayatPembayaran(
-        headers[
-          'x-user-nik'
-        ],
+    return this.pembayaranService.getRiwayatPembayaran(
+      headers['x-user-nik'],
 
-        Number(page) || 1,
+      Number(page) || 1,
 
-        Number(limit) || 10,
-      );
+      Number(limit) || 10,
+    );
   }
 
   @Get('etbpkp/:kodeBayar')
@@ -178,15 +132,10 @@ export class BapendaController {
     @Param('kodeBayar')
     kodeBayar: string,
   ) {
-    return this.etbpkbService
-      .getETBPKP(
-        kodeBayar,
-      );
+    return this.etbpkbService.getETBPKP(kodeBayar);
   }
 
-  @UseGuards(
-    AdminGuard,
-  )
+  @UseGuards(AdminGuard)
   @Get('admin/rekap')
   async getRekapTransaksi(
     @Query('page')
@@ -201,15 +150,14 @@ export class BapendaController {
     @Query('search')
     search?: string,
   ) {
-    return this.adminService
-      .getRekapTransaksi(
-        Number(page),
+    return this.adminService.getRekapTransaksi(
+      Number(page),
 
-        Number(limit),
+      Number(limit),
 
-        status,
+      status,
 
-        search,
-      );
+      search,
+    );
   }
 }

@@ -1,38 +1,30 @@
-import { Module }
-from '@nestjs/common';
+import { Module } from '@nestjs/common';
 
-import { TypeOrmModule }
-from '@nestjs/typeorm';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { BapendaController }
-from './bapenda.controller';
+import { BapendaController } from './bapenda.controller';
 
-import { KendaraanService }
-from './services/kendaraan.service';
+import { KendaraanController } from './controllers/kendaraan.controller';
 
-import { TagihanService }
-from './services/tagihan.service';
+import { KendaraanService } from './services/kendaraan.service';
 
-import { PembayaranService }
-from './services/pembayaran.service';
+import { TagihanService } from './services/tagihan.service';
 
-import { EtbpkbService }
-from './services/etbpkb.service';
+import { PembayaranService } from './services/pembayaran.service';
 
-import { AdminService }
-from './services/admin.service';
+import { EtbpkbService } from './services/etbpkb.service';
 
-import { AdminGuard }
-from '../../common/guards/admin.guard';
+import { AdminService } from './services/admin.service';
 
-import { Kendaraan }
-from './entities/kendaraan.entity';
+import { AdminGuard } from '../../common/guards/admin.guard';
 
-import { TagihanPajak }
-from './entities/tagihan-pajak.entity';
+import { Kendaraan } from './entities/kendaraan.entity';
 
-import { TransaksiPembayaran }
-from './entities/transaksi-pembayaran.entity';
+import { TagihanPajak } from './entities/tagihan-pajak.entity';
+
+import { TransaksiPembayaran } from './entities/transaksi-pembayaran.entity';
+
+import { KendaraanNjkb } from './entities/kendaraan-njkb.entity';
 
 @Module({
   imports: [
@@ -40,12 +32,11 @@ from './entities/transaksi-pembayaran.entity';
       Kendaraan,
       TagihanPajak,
       TransaksiPembayaran,
+      KendaraanNjkb,
     ]),
   ],
 
-  controllers: [
-    BapendaController,
-  ],
+  controllers: [BapendaController, KendaraanController],
 
   providers: [
     KendaraanService,
