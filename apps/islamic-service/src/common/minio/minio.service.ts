@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
+import { MetricsService } from '../../metrics/metrics.service';
 
 @Injectable()
 export class MinioService implements OnModuleInit {
@@ -8,7 +9,10 @@ export class MinioService implements OnModuleInit {
   private readonly bucket: string;
   private readonly logger = new Logger(MinioService.name);
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly metrics: MetricsService, // ← tambah
+  ) {
     this.bucket = this.config.getOrThrow('MINIO_BUCKET');
     this.client = new Client({
       endPoint: this.config.getOrThrow('MINIO_ENDPOINT'),
@@ -32,12 +36,24 @@ export class MinioService implements OnModuleInit {
     buffer: Buffer,
     mimetype: string,
   ): Promise<string> {
-    await this.client.putObject(this.bucket, filename, buffer, buffer.length, {
-      'Content-Type': mimetype,
-    });
-    const endpoint = this.config.getOrThrow('MINIO_ENDPOINT');
-    const port = this.config.getOrThrow('MINIO_PORT');
-    return `http://${endpoint}:${port}/${this.bucket}/${filename}`;
+    try {
+      await this.client.putObject(
+        this.bucket,
+        filename,
+        buffer,
+        buffer.length,
+        {
+          'Content-Type': mimetype,
+        },
+      );
+      this.metrics.minioUploadTotal.inc({ status: 'success' }); // ← tambah
+      const endpoint = this.config.getOrThrow('MINIO_ENDPOINT');
+      const port = this.config.getOrThrow('MINIO_PORT');
+      return `http://${endpoint}:${port}/${this.bucket}/${filename}`;
+    } catch (err) {
+      this.metrics.minioUploadTotal.inc({ status: 'error' }); // ← tambah
+      throw err;
+    }
   }
 
   async deleteFile(filename: string): Promise<void> {

@@ -16,6 +16,7 @@ import { CreateFasilitasDto } from './dto/create-fasilitas.dto';
 import { TolakBookingDto } from './dto/tolak-booking.dto';
 import { MinioService } from '../common/minio/minio.service';
 import path from 'node:path';
+import { MetricsService } from '../metrics/metrics.service';
 
 const FASILITAS_CACHE_KEY = 'islamic:fasilitas:all';
 const FASILITAS_TTL_MS = 5 * 60 * 1000;
@@ -30,6 +31,7 @@ export class FasilitasService {
     private readonly dataSource: DataSource,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
     private readonly minio: MinioService,
+    private readonly metrics: MetricsService,
   ) {}
 
   async findAll() {
@@ -134,7 +136,9 @@ export class FasilitasService {
       status: 'pending_review',
     });
 
-    return this.bookingRepo.save(booking);
+    const saved = await this.bookingRepo.save(booking);
+    this.metrics.fasilitasBookingTotal.inc({ fasilitas_id: fasilitasId }); // ← tambah
+    return saved;
   }
 
   async riwayatSaya(userNik: string) {

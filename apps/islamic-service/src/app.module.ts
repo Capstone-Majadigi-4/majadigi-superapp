@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -7,6 +7,8 @@ import { AcaraModule } from './acara/acara.module';
 import { FasilitasModule } from './fasilitas/fasilitas.module';
 import { SeederModule } from './database/seeder.module';
 import { MinioModule } from './common/minio/minio.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsMiddleware } from './middleware/metrics.middleware';
 
 @Module({
   imports: [
@@ -38,7 +40,12 @@ import { MinioModule } from './common/minio/minio.module';
     SeederModule,
     AcaraModule,
     FasilitasModule,
-    MinioModule
+    MinioModule,
+    MetricsModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MetricsMiddleware).exclude('metrics').forRoutes('*');
+  }
+}
