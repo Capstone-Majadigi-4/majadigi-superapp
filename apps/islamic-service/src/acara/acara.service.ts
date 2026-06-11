@@ -12,7 +12,6 @@ import { MinioService } from '../common/minio/minio.service';
 import 'multer';
 
 const ACARA_CACHE_KEY = 'islamic:acara:all';
-const ACARA_TTL_MS = 60 * 1000;
 
 @Injectable()
 export class AcaraService {
@@ -29,10 +28,6 @@ export class AcaraService {
   ) {}
 
   async findAll(tanggal?: string, status?: string) {
-    const cacheKey = `${ACARA_CACHE_KEY}:${tanggal ?? ''}:${status ?? ''}`;
-    const cached = await this.cache.get(cacheKey);
-    if (cached) return cached;
-
     const qb = this.acaraRepo
       .createQueryBuilder('a')
       .where('a.status != :batal', { batal: 'dibatalkan' });
@@ -42,9 +37,7 @@ export class AcaraService {
 
     qb.orderBy('a.tanggal', 'ASC').addOrderBy('a.waktu_mulai', 'ASC');
 
-    const result = await qb.getMany();
-    await this.cache.set(cacheKey, result, ACARA_TTL_MS);
-    return result;
+    return qb.getMany();
   }
 
   async findOne(id: string) {
