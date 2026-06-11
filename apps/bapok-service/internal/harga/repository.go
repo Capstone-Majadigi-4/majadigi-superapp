@@ -2,9 +2,13 @@ package harga
 
 import (
 	"context"
+	"errors"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+var ErrFKViolation = errors.New("komoditas atau pasar/koperasi tidak ditemukan")
 
 type Repository struct {
 	db *pgxpool.Pool
@@ -82,10 +86,14 @@ func (r *Repository) Create(ctx context.Context, req CreateHargaRequest) (*Harga
 		 VALUES ($1, $2, $3, $4, $5)
 		 ON CONFLICT (komoditas_id, pasar_id, tanggal)
 		 DO UPDATE SET harga = EXCLUDED.harga, input_oleh = EXCLUDED.input_oleh
-		 RETURNING id, komoditas_id, pasar_id, harga, tanggal, input_oleh, created_at`,
+		 RETURNING id, komoditas_id, pasar_id, harga, tanggal::text, input_oleh, created_at`,
 		req.KomoditasID, req.PasarID, req.Harga, req.Tanggal, req.InputOleh,
 	).Scan(&h.ID, &h.KomoditasID, &h.PasarID, &h.Harga, &h.Tanggal, &h.InputOleh, &h.CreatedAt)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+			return nil, ErrFKViolation
+		}
 		return nil, err
 	}
 	return &h, nil

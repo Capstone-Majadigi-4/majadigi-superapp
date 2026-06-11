@@ -150,6 +150,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 
 	result, err := h.service.Create(c.Context(), req)
 	if err != nil {
+		log.Printf("[CREATE harga] error=%v req=%+v", err, req)
 		return common.HandleError(c, err)
 	}
 	return common.Success(c, result, "Harga berhasil diinput", 201)
@@ -221,6 +222,7 @@ func (h *Handler) CreateHargaKoperasi(c *fiber.Ctx) error {
 
 	result, err := h.service.CreateHargaKoperasi(c.Context(), req)
 	if err != nil {
+		log.Printf("[CREATE harga-koperasi] error=%v req=%+v", err, req)
 		return common.HandleError(c, err)
 	}
 	return common.Success(c, result, "Harga koperasi berhasil diinput", 201)
