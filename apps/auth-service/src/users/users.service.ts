@@ -36,4 +36,11 @@ export class UsersService {
     if (nik.length !== 16) return nik;
     return nik.substring(0, 6) + '****' + nik.substring(12);
   }
+
+  async findAll(): Promise<UserEntity[]> {
+    return this.userRepo.find({
+      select: ['id', 'nik', 'nama', 'no_hp', 'is_active', 'created_at'],
+      order: { created_at: 'DESC' },
+    });
+  }
 }

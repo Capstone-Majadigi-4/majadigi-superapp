@@ -1,9 +1,11 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { RefreshTokensModule } from './refresh-tokens/refresh-tokens.module';
 import { AuthModule } from './auth/auth.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsMiddleware } from './middleware/metrics.middleware';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,6 +32,11 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     RefreshTokensModule,
     AuthModule,
+    MetricsModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(MetricsMiddleware).exclude('metrics').forRoutes('*');
+  }
+}
