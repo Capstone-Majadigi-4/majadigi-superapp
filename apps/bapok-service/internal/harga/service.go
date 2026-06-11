@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	cacheTTL              = 5 * time.Minute
+	cacheTTL              = 10 * time.Second
 	cacheKeyPerbandingan  = "bapok:perbandingan:%s"
 )
 
