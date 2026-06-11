@@ -59,8 +59,9 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	})
 
 	// komoditas
+	const komoditasID = "/komoditas/:id"
 	api.Get("/komoditas", komoditasHandler.FindAll)
-	api.Get("/komoditas/:id", komoditasHandler.FindById)
+	api.Get(komoditasID, komoditasHandler.FindById)
 
 	// ticker
 	api.Get("/ticker", tickerHandler.FindTicker)
@@ -71,7 +72,8 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	api.Get("/harga/perbandingan", hargaHandler.FindPerbandingan)
 	api.Get("/harga/:komoditas_id/histori", hargaHandler.FindHistori)
 
-	// koperasi
+	// pasar & koperasi
+	api.Get("/pasar", hargaHandler.FindPasarAll)
 	api.Get("/koperasi", hargaHandler.FindKoperasiAll)
 
 	// alert
@@ -82,8 +84,8 @@ func New(cfg *config.Config, db *pgxpool.Pool, rdb *redis.Client) *Server {
 	// admin
 	admin := api.Group("/admin", middleware.AdminGuard(cfg.AdminSecretKey))
 	admin.Post("/komoditas", komoditasHandler.Create)
-	admin.Patch("/komoditas/:id", komoditasHandler.Update)
-	admin.Delete("/komoditas/:id", komoditasHandler.Delete)
+	admin.Patch(komoditasID, komoditasHandler.Update)
+	admin.Delete(komoditasID, komoditasHandler.Delete)
 	admin.Post("/harga", hargaHandler.Create)
 	admin.Post("/harga/bulk-csv", hargaHandler.BulkCSV)
 	admin.Post("/harga-koperasi", hargaHandler.CreateHargaKoperasi)

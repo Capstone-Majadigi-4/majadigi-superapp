@@ -196,6 +196,26 @@ func (r *Repository) TriggerAlert(ctx context.Context, id string) error {
 	return err
 }
 
+func (r *Repository) FindPasarAll(ctx context.Context) ([]Pasar, error) {
+	rows, err := r.db.Query(ctx,
+		`SELECT id, nama, kota, lat, lng FROM bapok.pasar ORDER BY nama ASC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []Pasar
+	for rows.Next() {
+		var p Pasar
+		if err := rows.Scan(&p.ID, &p.Nama, &p.Kota, &p.Lat, &p.Lng); err != nil {
+			return nil, err
+		}
+		result = append(result, p)
+	}
+	return result, nil
+}
+
 func (r *Repository) FindKoperasiAll(ctx context.Context) ([]Koperasi, error) {
 	rows, err := r.db.Query(ctx,
 		`SELECT id, nama, kota FROM bapok.koperasi WHERE is_active = true ORDER BY nama ASC`,

@@ -142,14 +142,29 @@ func (r *Repository) Update(ctx context.Context, id string, req UpdateKomoditasR
 }
 
 func (r *Repository) Delete(ctx context.Context, id string) error {
-	result, err := r.db.Exec(ctx,
-		`DELETE FROM bapok.komoditas WHERE id = $1`, id,
-	)
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, `DELETE FROM bapok.price_alert WHERE komoditas_id = $1`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM bapok.harga_koperasi WHERE komoditas_id = $1`, id); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `DELETE FROM bapok.harga_harian WHERE komoditas_id = $1`, id); err != nil {
+		return err
+	}
+
+	result, err := tx.Exec(ctx, `DELETE FROM bapok.komoditas WHERE id = $1`, id)
 	if err != nil {
 		return err
 	}
 	if result.RowsAffected() == 0 {
 		return ErrNotFound
 	}
-	return nil
+
+	return tx.Commit(ctx)
 }

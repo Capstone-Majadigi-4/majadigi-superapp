@@ -179,6 +179,10 @@ func (s *Service) checkAlerts(ctx context.Context, komoditasID string, hargaBaru
 	}
 }
 
+func (s *Service) FindPasarAll(ctx context.Context) ([]Pasar, error) {
+	return s.repo.FindPasarAll(ctx)
+}
+
 func (s *Service) FindKoperasiAll(ctx context.Context) ([]Koperasi, error) {
 	return s.repo.FindKoperasiAll(ctx)
 }
