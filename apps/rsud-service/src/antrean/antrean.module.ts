@@ -6,9 +6,13 @@ import { JadwalDokter } from './entities/jadwal-dokter.entity';
 import { AntreanService } from './antrean.service';
 import { AntreanController } from './antrean.controller';
 import { AntreanGateway } from './antrean.gateway';
+import { MetricsModule } from '../metrics/metrics.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Antrean, Dokter, JadwalDokter])],
+  imports: [
+    TypeOrmModule.forFeature([Antrean, Dokter, JadwalDokter]),
+    MetricsModule,
+  ],
   providers: [AntreanService, AntreanGateway],
   controllers: [AntreanController],
 })

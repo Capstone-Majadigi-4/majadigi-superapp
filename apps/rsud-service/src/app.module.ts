@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -8,6 +8,8 @@ import { AntreanModule } from './antrean/antrean.module';
 import { NotificationModule } from './notification/notification.module';
 import { SeederModule } from './database/seeder.module';
 import { KamarModule } from './kamar/kamar.module';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsMiddleware } from './middleware/metrics.middleware';
 
 @Module({
   imports: [
@@ -16,7 +18,9 @@ import { KamarModule } from './kamar/kamar.module';
       isGlobal: true,
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        stores: [createKeyv(config.get<string>('REDIS_URL', 'redis://localhost:6379'))],
+        stores: [
+          createKeyv(config.get<string>('REDIS_URL', 'redis://localhost:6379')),
+        ],
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -39,6 +43,11 @@ import { KamarModule } from './kamar/kamar.module';
     PoliModule,
     AntreanModule,
     KamarModule,
+    MetricsModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply( MetricsMiddleware).exclude('metrics').forRoutes('*');
+  }
+}

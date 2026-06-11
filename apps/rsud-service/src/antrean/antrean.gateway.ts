@@ -2,21 +2,29 @@ import {
   WebSocketGateway,
   WebSocketServer,
   OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server, Socket } from 'socket.io';
 import { Antrean } from './entities/antrean.entity';
+import { MetricsService } from '../metrics/metrics.service';
 
 @WebSocketGateway({ path: '/api/v1/rsud/antrean/live', cors: { origin: '*' } })
-export class AntreanGateway implements OnGatewayConnection {
+export class AntreanGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer() server!: Server;
 
   constructor(
-    @InjectRepository(Antrean) private readonly antreanRepo: Repository<Antrean>,
+    @InjectRepository(Antrean)
+    private readonly antreanRepo: Repository<Antrean>,
+    private readonly metrics: MetricsService,
   ) {}
 
   async handleConnection(client: Socket) {
+    this.metrics.wsClientsConnected.inc();
+
     const poliId = client.handshake.query.poli_id as string;
     if (!poliId) return;
 
@@ -26,6 +34,9 @@ export class AntreanGateway implements OnGatewayConnection {
       order: { nomor_antrean: 'ASC' },
       relations: ['dokter'],
     });
+
+    // Update gauge antrian aktif untuk poli ini
+    this.metrics.antreanAktif.set({ poli_id: poliId }, antrean.length);
 
     client.emit('QUEUE_STATE', {
       poli_id: poliId,
@@ -39,6 +50,10 @@ export class AntreanGateway implements OnGatewayConnection {
     });
   }
 
+  handleDisconnect() {
+    this.metrics.wsClientsConnected.dec();
+  }
+
   broadcastDipanggil(poliId: string, antrean: Antrean) {
     this.server.to(`poli:${poliId}`).emit('ANTREAN_DIPANGGIL', {
       event: 'ANTREAN_DIPANGGIL',
@@ -49,6 +64,9 @@ export class AntreanGateway implements OnGatewayConnection {
   }
 
   broadcastAntreanBaru(poliId: string, antrean: Antrean) {
+    // Update gauge setiap ada antrian baru
+    this.metrics.antreanAktif.inc({ poli_id: poliId });
+
     this.server.to(`poli:${poliId}`).emit('ANTREAN_BARU', {
       id: antrean.id,
       nomor_antrean: antrean.nomor_antrean,
