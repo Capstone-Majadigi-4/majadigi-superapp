@@ -2,29 +2,33 @@ import {
   WebSocketGateway,
   WebSocketServer,
   OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Server, Socket } from 'socket.io';
 import { Armada } from './entities/armada.entity';
+import { MetricsService } from '../metrics/metrics.service';
 
 @WebSocketGateway({
   path: '/api/v1/transjatim/armada/live',
   cors: { origin: '*' },
 })
-export class ArmadaGateway implements OnGatewayConnection {
-  @WebSocketServer()
-  server!: Server;
+export class ArmadaGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  @WebSocketServer() server!: Server;
 
   private readonly logger = new Logger(ArmadaGateway.name);
 
   constructor(
     @InjectRepository(Armada)
     private readonly armadaRepo: Repository<Armada>,
+    private readonly metrics: MetricsService,
   ) {}
 
   async handleConnection(client: Socket) {
+    this.metrics.wsClientsConnected.inc();
+
     const koridorId = client.handshake.query.koridor_id as string;
     this.logger.log(`Client connected: ${client.id}, koridor_id: ${koridorId}`);
 
@@ -35,12 +39,13 @@ export class ArmadaGateway implements OnGatewayConnection {
     }
 
     await client.join(`koridor:${koridorId}`);
-    const rooms = Array.from(client.rooms);
-    this.logger.log(`Client ${client.id} joined rooms: ${rooms.join(', ')}`);
 
     const armada = await this.armadaRepo.find({
       where: { koridor_id: koridorId, status: 'aktif' },
     });
+
+    // Update gauge armada aktif untuk koridor ini
+    this.metrics.armadaAktif.set({ koridor_id: koridorId }, armada.length);
 
     client.emit('ARMADA_STATE', {
       koridor_id: koridorId,
@@ -54,10 +59,19 @@ export class ArmadaGateway implements OnGatewayConnection {
     });
   }
 
+  handleDisconnect() {
+    this.metrics.wsClientsConnected.dec();
+  }
+
   broadcastLokasi(koridorId: string, armada: Armada) {
     const room = `koridor:${koridorId}`;
     const sockets = this.server.sockets.adapter.rooms.get(room);
-    this.logger.log(`Broadcasting to room: ${room}, clients in room: ${sockets?.size ?? 0}`);
+    this.logger.log(
+      `Broadcasting to room: ${room}, clients: ${sockets?.size ?? 0}`,
+    );
+
+    // Hitung setiap update lokasi yang di-broadcast
+    this.metrics.armadaLocationUpdates.inc({ koridor_id: koridorId });
 
     this.server.to(room).emit('ARMADA_BERGERAK', {
       id: armada.id,
