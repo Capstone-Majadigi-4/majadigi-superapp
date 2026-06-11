@@ -10,6 +10,7 @@ import { CreateAcaraDto, UpdateAcaraDto } from './dto/create-acara.dto';
 import * as path from 'node:path';
 import { MinioService } from '../common/minio/minio.service';
 import 'multer';
+import { MetricsService } from '../metrics/metrics.service';
 
 const ACARA_CACHE_KEY = 'islamic:acara:all';
 
@@ -25,6 +26,7 @@ export class AcaraService {
     private readonly dataSource: DataSource,
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
     private readonly minio: MinioService,
+    private readonly metrics: MetricsService,
   ) {}
 
   async findAll(tanggal?: string, status?: string) {
@@ -91,7 +93,7 @@ export class AcaraService {
         pendaftaran,
       );
       await queryRunner.commitTransaction();
-
+      this.metrics.acaraPendaftaranTotal.inc(); 
       await this.invalidateCache();
       return saved;
     } catch (err) {
@@ -120,11 +122,17 @@ export class AcaraService {
     let poster_url = dto.poster_url;
 
     if (file) {
-      this.logger.log(`Uploading poster: ${file.originalname} (${file.mimetype})`);
+      this.logger.log(
+        `Uploading poster: ${file.originalname} (${file.mimetype})`,
+      );
       try {
         const ext = path.extname(file.originalname);
         const filename = `acara/poster-${uuidv4()}${ext}`;
-        poster_url = await this.minio.uploadFile(filename, file.buffer, file.mimetype);
+        poster_url = await this.minio.uploadFile(
+          filename,
+          file.buffer,
+          file.mimetype,
+        );
         this.logger.log(`Poster uploaded: ${poster_url}`);
       } catch (err) {
         const e = err as Error;
@@ -159,15 +167,21 @@ export class AcaraService {
       if (acara.poster_url) {
         const oldFilename = acara.poster_url.split(`/majadigi/`)[1];
         if (oldFilename)
-          await this.minio.deleteFile(oldFilename).catch((err: Error) =>
-            this.logger.warn(`Gagal hapus poster lama: ${err.message}`),
-          );
+          await this.minio
+            .deleteFile(oldFilename)
+            .catch((err: Error) =>
+              this.logger.warn(`Gagal hapus poster lama: ${err.message}`),
+            );
       }
       this.logger.log(`Uploading poster baru: ${file.originalname}`);
       try {
         const ext = path.extname(file.originalname);
         const filename = `acara/poster-${uuidv4()}${ext}`;
-        dto.poster_url = await this.minio.uploadFile(filename, file.buffer, file.mimetype);
+        dto.poster_url = await this.minio.uploadFile(
+          filename,
+          file.buffer,
+          file.mimetype,
+        );
         this.logger.log(`Poster diupdate: ${dto.poster_url}`);
       } catch (err) {
         const e = err as Error;

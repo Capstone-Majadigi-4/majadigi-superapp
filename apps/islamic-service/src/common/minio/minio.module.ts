@@ -1,8 +1,9 @@
-import { Global, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MinioService } from './minio.service';
+import { MetricsModule } from '../../metrics/metrics.module';
 
-@Global()
 @Module({
+  imports: [MetricsModule], 
   providers: [MinioService],
   exports: [MinioService],
 })
