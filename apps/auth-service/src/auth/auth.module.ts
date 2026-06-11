@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { RefreshTokensModule } from '../refresh-tokens/refresh-tokens.module';
+import { MetricsModule } from '../metrics/metrics.module'; // ← tambah
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RefreshTokensModule } from '../refresh-tokens/refresh-tokens.module';
     }),
     UsersModule,
     RefreshTokensModule,
+    MetricsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
