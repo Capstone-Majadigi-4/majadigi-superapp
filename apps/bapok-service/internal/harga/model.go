@@ -60,6 +60,14 @@ type BulkCSVResult struct {
 	Errors  []string `json:"errors,omitempty"`
 }
 
+type Pasar struct {
+	ID   string  `json:"id"`
+	Nama string  `json:"nama"`
+	Kota string  `json:"kota"`
+	Lat  float64 `json:"lat"`
+	Lng  float64 `json:"lng"`
+}
+
 type Koperasi struct {
 	ID   string `json:"id"`
 	Nama string `json:"nama"`

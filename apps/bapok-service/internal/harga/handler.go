@@ -144,11 +144,23 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		})
 	}
 
+	if _, err := time.Parse(dateLayout, req.Tanggal); err != nil {
+		return common.Error(c, errDateFormat, 400)
+	}
+
 	result, err := h.service.Create(c.Context(), req)
 	if err != nil {
 		return common.HandleError(c, err)
 	}
 	return common.Success(c, result, "Harga berhasil diinput", 201)
+}
+
+func (h *Handler) FindPasarAll(c *fiber.Ctx) error {
+	result, err := h.service.FindPasarAll(c.Context())
+	if err != nil {
+		return common.HandleError(c, err)
+	}
+	return common.Success(c, result, "OK", 200)
 }
 
 func (h *Handler) FindKoperasiAll(c *fiber.Ctx) error {

@@ -85,6 +85,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 	if err := h.service.Delete(c.Context(), id); err != nil {
+		log.Printf("[DELETE komoditas] id=%s error=%v", id, err)
 		return common.HandleError(c, err)
 	}
 	return common.Success(c, nil, "Komoditas berhasil dihapus", 200)
