@@ -4,13 +4,12 @@ import (
 	"bapok-service/internal/common"
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 const cacheKey = "bapok:komoditas:all"
-const cacheTTL = 10 * time.Minute
+const cacheTTL = 1
 
 type Service struct {
 	repo *Repository
