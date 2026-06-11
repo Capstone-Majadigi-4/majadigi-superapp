@@ -1,11 +1,11 @@
 package main
 
-
 import (
 	"log"
 
 	"bapok-service/config"
 	"bapok-service/database"
+	"bapok-service/internal/metrics"
 	"bapok-service/seeder"
 	"bapok-service/server"
 )
@@ -42,6 +42,8 @@ func main() {
 	defer rdb.Close()
 
 	seeder.Run(db)
+
+	metrics.Init()  
 
 	srv := server.New(cfg, db, rdb)
 	log.Printf("Bapok Service running on port %s", cfg.Port)

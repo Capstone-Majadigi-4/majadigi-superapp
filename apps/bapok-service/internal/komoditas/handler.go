@@ -2,6 +2,7 @@ package komoditas
 
 import (
 	"bapok-service/internal/common"
+	"bapok-service/internal/metrics"
 	"log"
 
 	"github.com/gofiber/fiber/v2"
@@ -54,7 +55,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 	if err != nil {
 		return common.HandleError(c, err)
 	}
-
+	metrics.KomoditasOperationTotal.WithLabelValues("create").Inc()
 	return common.Success(c, result, "Komoditas berhasil dibuat", 201)
 }
 
@@ -79,6 +80,7 @@ func (h *Handler) Update(c *fiber.Ctx) error {
 		return common.HandleError(c, err)
 	}
 
+	metrics.KomoditasOperationTotal.WithLabelValues("update").Inc()
 	return common.Success(c, result, "Komoditas berhasil diupdate", 200)
 }
 
@@ -88,5 +90,6 @@ func (h *Handler) Delete(c *fiber.Ctx) error {
 		log.Printf("[DELETE komoditas] id=%s error=%v", id, err)
 		return common.HandleError(c, err)
 	}
+	metrics.KomoditasOperationTotal.WithLabelValues("delete").Inc()
 	return common.Success(c, nil, "Komoditas berhasil dihapus", 200)
 }

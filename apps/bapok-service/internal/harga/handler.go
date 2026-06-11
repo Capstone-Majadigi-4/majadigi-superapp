@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bapok-service/internal/common"
+	"bapok-service/internal/metrics"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -153,6 +154,7 @@ func (h *Handler) Create(c *fiber.Ctx) error {
 		log.Printf("[CREATE harga] error=%v req=%+v", err, req)
 		return common.HandleError(c, err)
 	}
+	metrics.HargaInputTotal.WithLabelValues("pasar").Inc()
 	return common.Success(c, result, "Harga berhasil diinput", 201)
 }
 
@@ -225,7 +227,10 @@ func (h *Handler) CreateHargaKoperasi(c *fiber.Ctx) error {
 		log.Printf("[CREATE harga-koperasi] error=%v req=%+v", err, req)
 		return common.HandleError(c, err)
 	}
+
+	metrics.HargaInputTotal.WithLabelValues("koperasi").Inc()
 	return common.Success(c, result, "Harga koperasi berhasil diinput", 201)
+
 }
 
 func (h *Handler) BulkCSVKoperasi(c *fiber.Ctx) error {
