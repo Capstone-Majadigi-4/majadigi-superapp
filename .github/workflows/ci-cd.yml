@@ -1,0 +1,232 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - dev
+      - chore/setup-infra
+  pull_request:
+    branches:
+      - dev
+      - main
+    types:
+      - opened
+      - synchronize
+      - closed
+
+jobs:
+  # ============================================================
+  # CI — Jalan saat push/PR ke dev dan push ke chore/setup-infra
+  # ============================================================
+  test:
+    name: Test & SonarQube
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && github.base_ref == 'dev')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: |
+            apps/gateway/pnpm-lock.yaml
+            apps/auth-service/pnpm-lock.yaml
+            apps/transjatim-service/pnpm-lock.yaml
+
+      - name: Install gateway dependencies
+        working-directory: apps/gateway
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install auth-service dependencies
+        working-directory: apps/auth-service
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Install transjatim-service dependencies
+        working-directory: apps/transjatim-service
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Test gateway
+        working-directory: apps/gateway
+        run: pnpm test --passWithNoTests
+
+      - name: Test auth-service
+        working-directory: apps/auth-service
+        run: pnpm test --passWithNoTests
+
+      - name: Test transjatim-service
+        working-directory: apps/transjatim-service
+        run: pnpm test --passWithNoTests
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=capstone-majadigi-4
+            -Dsonar.projectKey=Capstone-Majadigi-4_majadigi-superapp
+            -Dsonar.sources=apps
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**
+
+  # ============================================================
+  # CD — Build & Push & Deploy
+  # Jalan saat:
+  #   - push ke chore/setup-infra
+  #   - merge PR ke dev
+  #   - merge PR ke main
+  # ============================================================
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'push' && (github.ref == 'refs/heads/chore/setup-infra' || github.ref == 'refs/heads/dev')) ||
+      (github.event_name == 'pull_request' && github.base_ref == 'main' && github.event.pull_request.merged == true) ||
+      (github.event_name == 'pull_request' && github.base_ref == 'dev' && github.event.pull_request.merged == true)
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - name: Generate image tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    name: Build & Push — ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: gateway
+            context: apps/gateway
+            image: majadigi-gateway
+          - service: auth-service
+            context: apps/auth-service
+            image: majadigi-auth-service
+          - service: transjatim-service
+            context: apps/transjatim-service
+            image: majadigi-transjatim-service
+          - service: bapok-service
+            context: apps/bapok-service
+            image: majadigi-bapok-service
+          - service: islamic-service
+            context: apps/islamic-service
+            image: majadigi-islamic-service
+          - service: rsud-service
+            context: apps/rsud-service
+            image: majadigi-rsud-service
+          - service: bapenda-service
+            context: apps/bapenda-service
+            image: majadigi-bapenda-service
+          - service: emergency-service
+            context: apps/emergency-service
+            image: majadigi-emergency-service
+          - service: tourism-service
+            context: apps/tourism-service
+            image: majadigi-tourism-service
+          - service: bansos-service
+            context: apps/bansos-service-v2
+            image: majadigi-bansos-service
+          - service: etibi-service
+            context: apps/etibi-service
+            image: majadigi-etibi-service
+          - service: sinaker-service
+            context: apps/sinaker-service
+            image: majadigi-sinaker-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & push ${{ matrix.service }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ needs.prepare.outputs.image_tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+      - build-and-push
+    env:
+      TAG: ${{ needs.prepare.outputs.image_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Save current stable tag
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/majadigi/infrastructure
+            grep IMAGE_TAG .env 2>/dev/null | cut -d= -f2 > .last_stable_tag || echo "latest" > .last_stable_tag
+            echo "Saved stable tag: $(cat .last_stable_tag)"
+
+      - name: Deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          envs: TAG
+          script: |
+            set -e
+            cd /opt/majadigi/infrastructure
+            sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$TAG/" .env || echo "IMAGE_TAG=$TAG" >> .env
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker image prune -f || true
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/majadigi/infrastructure
+            docker compose -f docker-compose.prod.yml ps
+            echo "Deploy selesai — cek status service di atas"
+
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            cd /opt/majadigi/infrastructure
+            PREV_TAG=$(cat .last_stable_tag 2>/dev/null || echo "latest")
+            echo "Rolling back to: $PREV_TAG"
+            sed -i "s/IMAGE_TAG=.*/IMAGE_TAG=$PREV_TAG/" .env
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            echo "Rollback complete"

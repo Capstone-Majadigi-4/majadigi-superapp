@@ -141,3 +141,38 @@ vite.config.ts.timestamp-*
 
 build/
 .dart_tool/
+
+# ============================================================
+# LOCAL DEVELOPMENT & PRIVATE FILES (Don't commit)
+# ============================================================
+
+# Skill & documentation development
+SKILL.md
+PERSONAL_NOTES.md
+DEVELOPMENT_LOG.md
+
+# IDE & editor specific
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Local development scripts
+scripts/local/*.sh
+!scripts/local/.gitkeep
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# API testing
+.rest
+.http
+test-requests/
+
+# Database dumps (local backup)
+dumps/
+*.sql
+!migrations/
